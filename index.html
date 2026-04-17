@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Crypto Staking</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        body { background: #080a0c; color: #eaeaeb; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; }
+        .tab-content { display: none; animation: slideUp 0.3s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-active { color: #f3ba2f !important; }
+        .ticker-scroll { display: flex; white-space: nowrap; animation: scroll 25s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    </style>
+</head>
+<body class="pb-32">
+
+    <div class="w-full bg-black/60 border-b border-white/5 py-2 overflow-hidden sticky top-0 z-50 backdrop-blur-md">
+        <div class="ticker-scroll flex gap-10 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <span>BTC <span class="text-green-500">$68,214.10 ↑</span></span>
+            <span>ETH <span class="text-green-500">$3,412.55 ↑</span></span>
+            <span>SOL <span class="text-red-500">$142.20 ↓</span></span>
+            <span>USDT <span class="text-gray-300">$1.00 ↔</span></span>
+            <span>BNB <span class="text-green-500">$588.30 ↑</span></span>
+        </div>
+    </div>
+
+    <div class="p-6 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div id="uAvatar" class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center font-black text-black text-lg">?</div>
+            <div>
+                <h1 id="uName" class="font-bold text-sm tracking-tight leading-none">...</h1>
+                <span class="text-[9px] text-gray-500 uppercase tracking-tighter">Premium Üye</span>
+            </div>
+        </div>
+        <button onclick="connectUniversalWallet()" id="walletBtn" class="bg-blue-600/10 border border-blue-500/30 text-blue-400 text-[10px] font-black px-4 py-2 rounded-xl transition-all active:scale-95">CÜZDAN BAĞLA</button>
+    </div>
+
+    <div class="px-6">
+        <div id="tab-home" class="tab-content active">
+            <h2 class="font-orbitron text-xl font-black mb-6 italic text-yellow-500 uppercase tracking-tighter">Yatırım Planları</h2>
+            <div class="space-y-4">
+                <div class="glass-card p-6 border-l-4 border-l-yellow-500">
+                    <div class="flex justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-white uppercase">10 GÜN VADE</h3>
+                            <p class="text-[10px] text-gray-500">Günlük %1.0 | Toplam %10</p>
+                        </div>
+                        <span class="text-green-400 font-orbitron text-xl">+10%</span>
+                    </div>
+                    <button onclick="openInvestModal(10, 20, 10)" class="w-full bg-yellow-500 text-black font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-yellow-500/20">PLAN SEÇ</button>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-l-blue-500">
+                    <div class="flex justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-white uppercase">30 GÜN VADE</h3>
+                            <p class="text-[10px] text-gray-500">Günlük %0.66 | Toplam %20</p>
+                        </div>
+                        <span class="text-green-400 font-orbitron text-xl">+20%</span>
+                    </div>
+                    <button onclick="openInvestModal(30, 20, 20)" class="w-full bg-blue-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20">PLAN SEÇ</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-investments" class="tab-content">
+            <h2 class="font-orbitron text-xl font-black mb-6 italic text-blue-500 uppercase tracking-tighter">VARLIKLARIM</h2>
+            <div id="myInvestmentsList" class="space-y-4">
+                </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl flex justify-around py-4 z-50">
+        <button onclick="switchTab('home')" id="navHome" class="nav-active flex flex-col items-center gap-1">
+            <span class="text-xl">💎</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">KAZAN</span>
+        </button>
+        <button onclick="switchTab('investments')" id="navInvest" class="text-gray-500 flex flex-col items-center gap-1">
+            <span class="text-xl">📊</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">VARLIKLARIM</span>
+        </button>
+    </nav>
+
+    <div id="modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-6 z-[100] backdrop-blur-xl">
+        <div class="glass-card w-full max-w-sm p-8 border-yellow-500/20">
+            <div id="step1">
+                <h3 class="font-orbitron text-center text-lg font-black text-white mb-6 uppercase">Yatırım Tutarı</h3>
+                <input type="number" id="investAmount" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-center text-xl font-bold text-yellow-500 mb-6 focus:outline-none focus:border-yellow-500" placeholder="0.00 USDT">
+                <button onclick="toStep2()" class="w-full bg-yellow-500 text-black font-black py-4 rounded-xl text-xs uppercase tracking-widest">DEVAM ET</button>
+            </div>
+            <div id="step2" class="hidden text-center">
+                <h3 class="font-orbitron text-md font-black text-white mb-4 uppercase">TRC20 ADRESİ</h3>
+                <div class="bg-black p-4 rounded-xl border border-dashed border-yellow-500/50 mb-6 select-all">
+                    <p class="font-mono text-[10px] text-yellow-500 break-all">TY7xP_SENIN_TRC20_ADRESIN_BURAYA</p>
+                </div>
+                <button id="confirmBtn" onclick="confirmPay()" class="w-full bg-green-600 text-white font-black py-4 rounded-xl text-xs uppercase">ÖDEMEYİ TAMAMLADIM</button>
+            </div>
+            <button onclick="closeModal()" class="w-full mt-4 text-gray-500 text-[10px] font-bold uppercase">İPTAL</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const API_URL = 'https://kripto-bot-backend.onrender.com/api';
+        let currentPlan = null;
+
+        window.onload = () => {
+            tg.ready();
+            tg.expand();
+            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Pilot" };
+            document.getElementById('uName').innerText = user.first_name.toUpperCase();
+            document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
+            syncUser(user);
+        };
+
+        async function syncUser(user) {
+            try {
+                const res = await fetch(`${API_URL}/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name })
+                });
+                const data = await res.json();
+                renderInvestments(data.investments);
+            } catch(e) { console.error("Sync hatası:", e); }
+        }
+
+        function openInvestModal(days, min, profitRate) {
+            currentPlan = { days, min, profitRate };
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('modal').classList.replace('hidden', 'flex');
+        }
+
+        function toStep2() {
+            const val = document.getElementById('investAmount').value;
+            if(val < currentPlan.min) return alert(`Minimum yatırım: ${currentPlan.min} USDT`);
+            currentPlan.amount = val;
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        async function confirmPay() {
+            const user = tg.initDataUnsafe?.user || { id: "12345" };
+            const btn = document.getElementById('confirmBtn');
+            btn.disabled = true; btn.innerText = "BİLDİRİLİYOR...";
+
+            const res = await fetch(`${API_URL}/invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramId: user.id.toString(),
+                    planDays: currentPlan.days,
+                    amount: currentPlan.amount,
+                    profit: currentPlan.amount * (currentPlan.profitRate / 100)
+                })
+            });
+            if((await res.json()).success) {
+                alert("Yatırım bildirildi! Admin onayı bekleniyor.");
+                closeModal(); syncUser(user);
+            }
+        }
+
+        function renderInvestments(invs) {
+            const list = document.getElementById('myInvestmentsList');
+            if(!invs || !invs.length) {
+                list.innerHTML = `<p class="text-center text-gray-600 mt-10 text-xs">Henüz aktif bir yatırımınız yok.</p>`;
+                return;
+            }
+
+            list.innerHTML = invs.map(item => {
+                const isApproved = item.status === 'Aktif';
+                const uniqueId = item._id;
+
+                if(isApproved) {
+                    setInterval(() => {
+                        const el = document.getElementById(`profit-${uniqueId}`);
+                        if(!el) return;
+                        const startTime = new Date(item.approvedAt).getTime();
+                        const now = Date.now();
+                        const duration = item.planDays * 24 * 60 * 60 * 1000;
+                        const progress = Math.min((now - startTime) / duration, 1);
+                        const currentGain = (item.totalProfit * progress).toFixed(7);
+                        el.innerText = `+${currentGain} USDT`;
+                    }, 1000);
+                }
+
+                return `
+                    <div class="glass-card p-5 border-l-2 ${isApproved ? 'border-green-500' : 'border-yellow-500'}">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h4 class="text-[10px] font-black text-gray-500 uppercase">${item.planDays} GÜN VADE</h4>
+                                <p class="text-xs font-bold text-white mt-1">Sermaye: $${item.amount}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[8px] px-2 py-1 rounded bg-white/5 text-gray-400 font-black uppercase">${item.status}</span>
+                                <p id="profit-${uniqueId}" class="text-sm font-orbitron font-bold text-green-400 mt-1">
+                                    ${isApproved ? 'Hesaplanıyor...' : '+0.0000000'}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            ${isApproved ? `<button onclick="payoutRequest('withdrawal', '${uniqueId}')" class="flex-1 bg-green-600/20 text-green-500 text-[9px] font-black py-2 rounded-lg border border-green-500/20">PARA ÇEK</button>` : ''}
+                            <button onclick="payoutRequest('cancel', '${uniqueId}')" class="flex-1 bg-red-600/10 text-red-500 text-[9px] font-black py-2 rounded-lg border border-red-500/20">İPTAL ET</button>
+                        </div>
+                    </div>
+                `;
+            }).reverse().join('');
+        }
+
+        async function payoutRequest(type, invId) {
+            const addr = prompt("TRC20 Cüzdan Adresinizi Girin:");
+            if(!addr) return;
+            const res = await fetch(`${API_URL}/request-payout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: tg.initDataUnsafe?.user?.id.toString() || "12345", invId, address: addr, type })
+            });
+            if((await res.json()).success) alert("Talebiniz iletildi!");
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            document.getElementById('navHome').className = t === 'home' ? 'nav-active flex flex-col items-center gap-1' : 'text-gray-500 flex flex-col items-center gap-1';
+            document.getElementById('navInvest').className = t === 'investments' ? 'nav-active flex flex-col items-center gap-1' : 'text-gray-500 flex flex-col items-center gap-1';
+        }
+
+        function connectUniversalWallet() {
+            tg.showPopup({ title: 'Cüzdan Bağla', message: 'Hangi cüzdanı kullanmak istersiniz?', buttons: [{text: 'TrustWallet', id: 'tw'}, {text: 'MetaMask', id: 'mm'}] }, (id) => {
+                if(id) {
+                    document.getElementById('walletBtn').innerText = "BAĞLANDI";
+                    document.getElementById('walletBtn').classList.replace('text-blue-400', 'text-green-400');
+                }
+            });
+        }
+        function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
+    </script>
+</body>
+</html>

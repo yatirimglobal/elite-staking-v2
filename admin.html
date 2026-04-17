@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Admin - Yönetim Merkezi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; }
+        .admin-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; }
+        .btn-approve { background: #238636; }
+        .btn-approve:hover { background: #2ea043; }
+        .btn-finalize { background: #1f6feb; }
+        .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-black text-yellow-500 tracking-tight">ELITE ADMIN</h1>
+                <p class="text-gray-500 text-sm">Yatırım ve Çekim Taleplerini Yönetin</p>
+            </div>
+            <button onclick="loadData()" class="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all underline decoration-yellow-500">🔄 VERİLERİ YENİLE</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-center">
+            <div class="admin-card p-6 border-t-4 border-t-yellow-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Bekleyen Onaylar</p>
+                <h2 id="stat-pending" class="text-3xl font-black text-white mt-2">0</h2>
+            </div>
+            <div class="admin-card p-6 border-t-4 border-t-blue-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Aktif Yatırımlar</p>
+                <h2 id="stat-active" class="text-3xl font-black text-white mt-2">0</h2>
+            </div>
+            <div class="admin-card p-6 border-t-4 border-t-red-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Çekim Talepleri</p>
+                <h2 id="stat-requests" class="text-3xl font-black text-white mt-2">0</h2>
+            </div>
+        </div>
+
+        <div class="admin-card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-[#0d1117] text-gray-500 text-xs uppercase">
+                        <tr>
+                            <th class="p-4">Kullanıcı / ID</th>
+                            <th class="p-4">Plan / Tutar</th>
+                            <th class="p-4">Durum</th>
+                            <th class="p-4">Cüzdan Adresi</th>
+                            <th class="p-4 text-right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody" class="text-sm">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://kripto-bot-backend.onrender.com/api';
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_URL}/admin/all`);
+                if (!res.ok) throw new Error("Veritabanı bağlantı hatası!");
+                const users = await res.json();
+                renderTable(users);
+            } catch (err) {
+                console.error(err);
+                alert("Veriler çekilemedi! MongoDB IP iznini (0.0.0.0/0) kontrol edin.");
+            }
+        }
+
+        function renderTable(users) {
+            const body = document.getElementById('adminTableBody');
+            body.innerHTML = '';
+            let p = 0, a = 0, r = 0;
+
+            users.forEach(user => {
+                if (!user.investments || user.investments.length === 0) return;
+                
+                user.investments.forEach(inv => {
+                    if(inv.status === 'Onay Bekliyor') p++;
+                    if(inv.status === 'Aktif') a++;
+                    if(inv.status.includes('Talebi')) r++;
+
+                    const row = document.createElement('tr');
+                    row.className = "border-b border-[#30363d] hover:bg-white/5 transition-all";
+                    row.innerHTML = `
+                        <td class="p-4">
+                            <div class="font-bold text-white">${user.name || 'Bilinmiyor'}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">${user.telegramId}</div>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-yellow-500 font-bold">${inv.planDays} Gün / $${inv.amount}</div>
+                            <div class="text-[10px] text-gray-400">Toplam Kâr: $${(inv.totalProfit || 0).toFixed(2)}</div>
+                        </td>
+                        <td class="p-4">
+                            <span class="status-badge ${getStatusClass(inv.status)}">${inv.status}</span>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-[10px] font-mono text-gray-400 break-all w-32">${inv.userWallet || 'Henüz Yok'}</div>
+                        </td>
+                        <td class="p-4 text-right">${getActionButtons(user.telegramId, inv)}</td>
+                    `;
+                    body.appendChild(row);
+                });
+            });
+
+            document.getElementById('stat-pending').innerText = p;
+            document.getElementById('stat-active').innerText = a;
+            document.getElementById('stat-requests').innerText = r;
+        }
+
+        function getStatusClass(status) {
+            if(status === 'Onay Bekliyor') return 'bg-yellow-900/30 text-yellow-500 border border-yellow-500/20';
+            if(status === 'Aktif') return 'bg-green-900/30 text-green-500 border border-green-500/20';
+            if(status === 'Çekim Talebi') return 'bg-blue-900/30 text-blue-500 border border-blue-500/20';
+            if(status === 'İptal Talebi') return 'bg-red-900/30 text-red-500 border border-red-500/20';
+            return 'bg-gray-800 text-gray-400';
+        }
+
+        function getActionButtons(tgId, inv) {
+            if(inv.status === 'Onay Bekliyor') {
+                return `<button onclick="updateStatus('${tgId}', '${inv._id}', 'approve')" class="btn-approve text-white text-[10px] font-black px-4 py-2 rounded shadow-lg shadow-green-900/20">ONAYLA</button>`;
+            }
+            if(inv.status === 'Çekim Talebi' || inv.status === 'İptal Talebi') {
+                return `<button onclick="updateStatus('${tgId}', '${inv._id}', 'finalize')" class="btn-finalize text-white text-[10px] font-black px-4 py-2 rounded shadow-lg shadow-blue-900/20 uppercase tracking-tighter">ÖDEME YAPILDI</button>`;
+            }
+            return `<span class="text-gray-600 italic text-[10px]">Tamamlandı</span>`;
+        }
+
+        async function updateStatus(telegramId, investmentId, action) {
+            const endpoint = action === 'approve' ? 'approve' : 'finalize';
+            const msg = action === 'approve' ? "Bu yatırımı onaylayarak kazancı başlatmak istiyor musunuz?" : "Ödemeyi yaptığınızı ve bu işlemi kapatmak istediğinizi onaylıyor musunuz?";
+            
+            if(!confirm(msg)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId, investmentId })
+                });
+                const result = await res.json();
+                if(result.success) {
+                    loadData();
+                } else {
+                    alert("Bir hata oluştu: " + result.message);
+                }
+            } catch (err) { 
+                alert("Sunucu hatası!"); 
+            }
+        }
+
+        // Sayfa yüklendiğinde verileri çek
+        loadData();
+    </script>
+</body>
+</html>
