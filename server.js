@@ -146,6 +146,7 @@ app.post('/api/admin/finalize', async (req, res) => {
 
 // --- SUNUCU BAŞLATMA ---
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`🚀 Sunucu ${PORT} portunda aktif.`);
+// 0.0.0.0 ekleyerek sunucunun dış dünyadan gelen her isteği dinlemesini sağlıyoruz
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Sunucu her yöne açık: ${PORT}`);
 });
