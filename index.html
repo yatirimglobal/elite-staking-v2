@@ -51,9 +51,7 @@
 
         <div id="tab-investments" class="tab-content">
             <h2 class="font-orbitron text-lg font-black mb-6 text-blue-500 uppercase tracking-tighter italic">Varlıklarım</h2>
-            <div id="myInvestmentsList" class="space-y-4">
-                <p class="text-center text-gray-600 mt-10 text-xs italic">Henüz yatırımınız bulunmuyor.</p>
-            </div>
+            <div id="myInvestmentsList" class="space-y-4"></div>
         </div>
     </div>
 
@@ -80,7 +78,7 @@
                 </div>
                 <button id="confirmBtn" onclick="confirmPay()" class="w-full bg-green-600 text-white font-black py-4 rounded-xl text-xs uppercase">ÖDEMEYİ TAMAMLADIM</button>
             </div>
-            <button onclick="closeModal()" class="w-full mt-4 text-gray-500 text-[10px] font-bold uppercase tracking-widest">İPTAL</button>
+            <button onclick="closeModal()" class="w-full mt-4 text-gray-500 text-[10px] font-bold uppercase tracking-widest">KAPAT</button>
         </div>
     </div>
 
@@ -92,103 +90,50 @@
 
         window.onload = () => {
             tg.ready(); tg.expand();
-            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "TestUser" };
+            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Kullanıcı" };
             document.getElementById('uName').innerText = user.first_name.toUpperCase();
             document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
             syncUser(user);
-            setInterval(updateUIRuntime, 1000); // Saniyelik canlı güncelleme
+            setInterval(updateUIRuntime, 1000);
         };
 
         async function syncUser(user) {
-            try {
-                const res = await fetch(`${API_URL}/sync`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name })
-                });
-                userData = await res.json();
-                renderInvestments();
-            } catch(e) { console.error(e); }
+            const res = await fetch(`${API_URL}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name })
+            });
+            userData = await res.json();
+            renderInvestments();
         }
 
-        function openInvestModal(days, profitRate) {
-            currentPlan = { days, profitRate, min: 10 };
-            document.getElementById('step1').classList.remove('hidden');
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('modal').classList.replace('hidden', 'flex');
-        }
+        async function cancelInvest(id) {
+            // İSTEDİĞİN ÖZEL UYARI
+            const onay = confirm("İPTAL UYARISI: Yatırımı iptal etmeniz durumunda %2 komisyon ve transfer ücretleri ana paranızdan kesilecektir. Devam etmek istiyor musunuz?");
+            if(!onay) return;
 
-        function toStep2() {
-            const val = document.getElementById('investAmount').value;
-            if(!val || val < 10) return alert("Minimum yatırım 10 USDT'dir.");
-            currentPlan.amount = Number(val);
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
-        }
-
-        async function confirmPay() {
-            const btn = document.getElementById('confirmBtn');
-            btn.disabled = true; btn.innerText = "BİLDİRİLİYOR...";
-            try {
-                const res = await fetch(`${API_URL}/invest`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegramId: userData.telegramId,
-                        planDays: currentPlan.days,
-                        amount: currentPlan.amount,
-                        profit: currentPlan.amount * (currentPlan.profitRate / 100)
-                    })
-                });
-                if(res.ok) { alert("Yatırım bildirildi! Onay bekleniyor."); closeModal(); syncUser(userData); }
-            } catch(e) { alert("Hata oluştu."); }
-            finally { btn.disabled = false; btn.innerText = "ÖDEMEYİ TAMAMLADIM"; }
-        }
-
-        function renderInvestments() {
-            const list = document.getElementById('myInvestmentsList');
-            if(!userData.investments.length) return;
-
-            list.innerHTML = userData.investments.map(inv => {
-                let statusColor = inv.status === 'Aktif' ? 'text-green-400' : 'text-yellow-500';
-                if(inv.status === 'Iptal Edildi') statusColor = 'text-red-500';
-
-                return `
-                    <div class="glass-card p-5 border-l-2 border-white/10" id="inv-${inv._id}">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[10px] font-black text-gray-500 uppercase">${inv.planDays} GÜN PLAN</span>
-                            <span class="text-[9px] px-2 py-1 rounded bg-white/5 ${statusColor} font-bold uppercase">${inv.status}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div><p class="text-[9px] text-gray-500 uppercase">Sermaye</p><p class="text-sm font-bold">$${inv.amount}</p></div>
-                            <div><p class="text-[9px] text-gray-500 uppercase">Canlı Kazanç</p><p class="text-sm font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.00</p></div>
-                        </div>
-                        <div class="mb-4">
-                            <p class="text-[9px] text-gray-500 uppercase mb-1">Kalan Süre</p>
-                            <p class="text-xs font-mono text-white" id="timer-${inv._id}">--:--:--</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 border border-red-500/20 text-red-500 py-2 rounded-lg text-[9px] font-black uppercase ${inv.status !== 'Aktif' && inv.status !== 'Onay Bekliyor' ? 'hidden' : ''}">Yatırımı İptal Et</button>
-                            <button id="withdraw-${inv._id}" disabled class="flex-1 bg-green-500/10 border border-green-500/20 text-gray-600 py-2 rounded-lg text-[9px] font-black uppercase">Para Çek</button>
-                        </div>
-                    </div>
-                `;
-            }).reverse().join('');
+            const res = await fetch(`${API_URL}/cancel-invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: userData.telegramId, investId: id })
+            });
+            if(res.ok) { alert("İşlem başarılı. Kesintili tutar iade edilecek."); syncUser(tg.initDataUnsafe.user); }
         }
 
         function updateUIRuntime() {
             if(!userData || !userData.investments) return;
             userData.investments.forEach(inv => {
                 if(inv.status !== 'Aktif') return;
-
                 const startTime = new Date(inv.createdAt).getTime();
                 const duration = inv.planDays * 24 * 60 * 60 * 1000;
                 const endTime = startTime + duration;
                 const now = new Date().getTime();
                 const diff = endTime - now;
 
-                // 1. Geri Sayım Sayacı
                 const timerEl = document.getElementById(`timer-${inv._id}`);
+                const profitEl = document.getElementById(`profit-${inv._id}`);
+                const drawBtn = document.getElementById(`withdraw-${inv._id}`);
+
                 if(diff > 0) {
                     const d = Math.floor(diff / (1000 * 60 * 60 * 24));
                     const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -196,46 +141,43 @@
                     const s = Math.floor((diff % (1000 * 60)) / 1000);
                     if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}d ${s}s`;
                     
-                    // 2. Canlı Kazanç Artışı (Sermaye + (Kar * Geçen Yüzde))
-                    const elapsed = now - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    const currentProfit = (inv.totalProfit * progress).toFixed(4);
-                    const profitEl = document.getElementById(`profit-${inv._id}`);
-                    if(profitEl) profitEl.innerText = `$${currentProfit}`;
+                    const progress = (now - startTime) / duration;
+                    const liveProfit = (inv.totalProfit * progress).toFixed(4);
+                    if(profitEl) profitEl.innerText = `$${liveProfit}`;
                 } else {
                     if(timerEl) timerEl.innerText = "SÜRE DOLDU";
-                    const profitEl = document.getElementById(`profit-${inv._id}`);
                     if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
-                    
-                    // Para çekme butonunu aktif et
-                    const drawBtn = document.getElementById(`withdraw-${inv._id}`);
-                    if(drawBtn) {
-                        drawBtn.disabled = false;
-                        drawBtn.classList.replace('text-gray-600', 'text-green-500');
-                        drawBtn.innerText = "PARA ÇEK";
-                    }
+                    if(drawBtn) { drawBtn.disabled = false; drawBtn.classList.add('text-green-500'); drawBtn.innerText = "PARA ÇEK"; }
                 }
             });
         }
 
-        async function cancelInvest(id) {
-            if(!confirm("Yatırımı iptal etmek istediğinize emin misiniz?")) return;
-            try {
-                const res = await fetch(`${API_URL}/cancel-invest`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId: userData.telegramId, investId: id })
-                });
-                if(res.ok) { alert("İptal edildi."); syncUser(userData); }
-            } catch(e) { alert("Hata oluştu."); }
+        function renderInvestments() {
+            const list = document.getElementById('myInvestmentsList');
+            if(!userData.investments.length) { list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-xs italic">Henüz yatırım yok.</p>'; return; }
+            list.innerHTML = userData.investments.map(inv => `
+                <div class="glass-card p-5 border-l-2 border-white/10">
+                    <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase">
+                        <span class="text-gray-500">${inv.planDays} GÜN</span>
+                        <span class="${inv.status === 'Aktif' ? 'text-green-400' : 'text-yellow-500'}">${inv.status}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><p class="text-[9px] text-gray-500 uppercase">Anapara</p><p class="text-sm font-bold">$${inv.amount.toFixed(2)}</p></div>
+                        <div><p class="text-[9px] text-gray-500 uppercase">Canlı Kar</p><p class="text-sm font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.00</p></div>
+                    </div>
+                    <div class="mb-4 text-[10px] font-mono" id="timer-${inv._id}">--:--:--</div>
+                    <div class="flex gap-2">
+                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-2 rounded-lg text-[9px] font-black uppercase ${inv.status === 'Aktif' || inv.status === 'Onay Bekliyor' ? '' : 'hidden'}">İptal Et</button>
+                        <button id="withdraw-${inv._id}" disabled class="flex-1 bg-green-500/10 text-gray-600 py-2 rounded-lg text-[9px] font-black uppercase">Para Çek</button>
+                    </div>
+                </div>
+            `).reverse().join('');
         }
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-            document.getElementById('tab-'+t).classList.add('active');
-            document.getElementById('navHome').className = t === 'home' ? 'nav-active flex flex-col items-center gap-1' : 'text-gray-500 flex flex-col items-center gap-1';
-            document.getElementById('navInvest').className = t === 'investments' ? 'nav-active flex flex-col items-center gap-1' : 'text-gray-500 flex flex-col items-center gap-1';
-        }
+        function openInvestModal(days, profitRate) { currentPlan = { days, profitRate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
+        function toStep2() { const val = document.getElementById('investAmount').value; if(val < 10) return alert("Min 10 USDT"); currentPlan.amount = Number(val); document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
+        async function confirmPay() { const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId, planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.profitRate/100) }) }); if(res.ok) { alert("Bildirildi!"); closeModal(); syncUser(userData); } }
+        function switchTab(t) { document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('navHome').classList.toggle('nav-active', t==='home'); document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); }
         function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
     </script>
 </body>
