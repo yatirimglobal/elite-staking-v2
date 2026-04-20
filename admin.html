@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Staking | Secure Admin</title>
+    <title>Elite Staking | Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -12,23 +12,28 @@
     </style>
 </head>
 <body class="p-6">
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl font-bold text-yellow-500 mb-8 uppercase tracking-tighter">Güvenli Yönetim Paneli</h1>
-        
-        <div id="loginArea" class="flex flex-col items-center justify-center mt-20">
-            <p class="text-gray-400 mb-4 text-sm uppercase">Yönetici Şifresini Giriniz</p>
-            <div class="flex gap-2">
-                <input type="password" id="adminPass" class="bg-gray-800 border border-gray-700 p-3 rounded-xl outline-none focus:border-yellow-500 text-white w-64">
-                <button onclick="login()" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">GİRİŞ</button>
+
+    <div class="max-w-5xl mx-auto">
+        <div id="loginArea" class="flex flex-col items-center justify-center mt-32">
+            <h1 class="text-2xl font-bold text-yellow-500 mb-6 uppercase tracking-tighter italic">Elite Admin Access</h1>
+            <div class="flex gap-2 bg-[#1a1d21] p-2 rounded-2xl border border-gray-800">
+                <input type="password" id="adminPass" placeholder="Şifre" class="bg-transparent p-3 outline-none text-white w-48">
+                <button onclick="login()" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all text-xs">GİRİŞ</button>
             </div>
         </div>
 
-        <div id="adminContent" class="hidden space-y-6">
-            <div class="flex justify-between items-center bg-yellow-500/10 p-4 rounded-xl border border-yellow-500/20 mb-6">
-                <span class="text-yellow-500 font-bold text-xs">OTURUM AÇILDI</span>
-                <button onclick="location.reload()" class="text-xs text-gray-500 underline uppercase">Çıkış Yap</button>
+        <div id="adminContent" class="hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold text-yellow-500 uppercase tracking-tighter italic">Yönetim Paneli</h1>
+                <div class="flex gap-4 items-center">
+                    <span class="text-[10px] text-green-500 font-bold bg-green-500/10 px-3 py-1 rounded-full uppercase">Güvenli Oturum</span>
+                    <button onclick="loadData()" class="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold text-sm hover:bg-yellow-400">🔄 YENİLE</button>
+                </div>
             </div>
-            <div id="userList" class="space-y-4"></div>
+
+            <div id="userList" class="space-y-6">
+                <p class="text-center text-gray-500 italic">Veriler yükleniyor...</p>
+            </div>
         </div>
     </div>
 
@@ -48,48 +53,89 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: savedPassword })
                 });
-                if(!res.ok) throw new Error("Hatalı Şifre!");
                 
+                if(!res.ok) throw new Error("Şifre Yanlış!");
+
                 const users = await res.json();
                 document.getElementById('loginArea').classList.add('hidden');
                 document.getElementById('adminContent').classList.remove('hidden');
                 renderUsers(users);
-            } catch (err) { alert(err.message); }
+            } catch (err) {
+                alert(err.message);
+            }
         }
 
         function renderUsers(users) {
             const list = document.getElementById('userList');
-            list.innerHTML = users.length ? users.map(user => `
-                <div class="admin-card p-6">
-                    <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-3">
-                        <div><h2 class="font-bold text-white">${user.name || 'Bilinmiyor'}</h2><p class="text-[10px] text-gray-500">ID: ${user.telegramId}</p></div>
-                    </div>
-                    ${user.investments.map(inv => `
-                        <div class="flex flex-wrap items-center justify-between bg-black/40 p-3 rounded-lg mb-2">
-                            <div class="text-[11px]">
-                                <span class="text-gray-400">$${inv.amount.toFixed(2)}</span> | 
-                                <span class="text-gray-400">${inv.planDays} GÜN</span> | 
-                                <span class="${inv.status === 'Aktif' ? 'text-green-500' : 'text-yellow-500'} font-bold uppercase">${inv.status}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                ${inv.status === 'Onay Bekliyor' ? `<button onclick="approve('${user.telegramId}', '${inv._id}')" class="bg-green-600 text-white px-3 py-1 rounded text-[9px] font-bold uppercase">Onayla</button>` : ''}
-                                <button onclick="del('${user.telegramId}', '${inv._id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded text-[9px] font-bold uppercase">Sil</button>
-                            </div>
+            list.innerHTML = '';
+
+            if (users.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Henüz kullanıcı kaydı yok.</p>';
+                return;
+            }
+
+            users.forEach(user => {
+                const card = document.createElement('div');
+                card.className = 'admin-card p-6 mb-6';
+                
+                let html = `
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-4 mb-4">
+                        <div>
+                            <h2 class="font-bold text-lg text-white">${user.name || 'Bilinmiyor'}</h2>
+                            <p class="text-xs text-gray-500 italic">ID: ${user.telegramId}</p>
                         </div>
-                    `).join('')}
-                </div>
-            `).join('') : '<p class="text-center text-gray-600">Kayıt bulunamadı.</p>';
+                        <span class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase">İŞLEMLER: ${user.investments.length}</span>
+                    </div>
+                `;
+
+                if (user.investments.length > 0) {
+                    user.investments.forEach(inv => {
+                        let statusColor = 'text-yellow-500';
+                        if(inv.status === 'Aktif') statusColor = 'text-green-500';
+                        if(inv.status === 'Iptal Edildi') statusColor = 'text-red-500';
+
+                        html += `
+                            <div class="flex flex-wrap items-center justify-between bg-black/30 p-4 rounded-lg mb-2 gap-4 border border-white/5">
+                                <div class="flex gap-8">
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Miktar</p><p class="text-sm font-bold">$${inv.amount.toFixed(2)}</p></div>
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Vade</p><p class="text-sm font-bold">${inv.planDays} GÜN</p></div>
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Durum</p><p class="text-sm font-bold ${statusColor}">${inv.status}</p></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    ${inv.status === 'Onay Bekliyor' ? 
+                                        `<button onclick="approveInvest('${user.telegramId}', '${inv._id}')" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded text-[10px] font-bold uppercase transition-all">Onayla</button>` : ''
+                                    }
+                                    <button onclick="deleteInvest('${user.telegramId}', '${inv._id}')" class="bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white px-5 py-2 rounded text-[10px] font-bold uppercase transition-all">Sil</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-xs text-gray-600 italic">Henüz yatırımı yok.</p>';
+                }
+
+                card.innerHTML = html;
+                list.appendChild(card);
+            });
         }
 
-        async function approve(tId, iId) {
+        async function approveInvest(tId, iId) {
             if(!confirm("Yatırımı onaylıyor musunuz?")) return;
-            const res = await fetch(`${API_URL}/admin/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPassword, telegramId: tId, investId: iId }) });
+            const res = await fetch(`${API_URL}/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: savedPassword, telegramId: tId, investId: iId })
+            });
             if(res.ok) loadData();
         }
 
-        async function del(tId, iId) {
-            if(!confirm("Bu işlemi silmek istediğinize emin misiniz?")) return;
-            const res = await fetch(`${API_URL}/admin/delete-invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPassword, telegramId: tId, investId: iId }) });
+        async function deleteInvest(tId, iId) {
+            if(!confirm("Silmek istediğinize emin misiniz?")) return;
+            const res = await fetch(`${API_URL}/admin/delete-invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: savedPassword, telegramId: tId, investId: iId })
+            });
             if(res.ok) loadData();
         }
     </script>
