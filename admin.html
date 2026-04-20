@@ -3,60 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Admin - Yönetim Merkezi</title>
+    <title>Elite Staking | Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; }
-        .admin-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; }
-        .btn-approve { background: #238636; }
-        .btn-approve:hover { background: #2ea043; }
-        .btn-finalize { background: #1f6feb; }
-        .status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { background: #0f1113; color: #fff; font-family: 'Inter', sans-serif; }
+        .admin-card { background: #1a1d21; border: 1px solid #2d3139; border-radius: 12px; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-6">
 
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-black text-yellow-500 tracking-tight">ELITE ADMIN</h1>
-                <p class="text-gray-500 text-sm">Yatırım ve Çekim Taleplerini Yönetin</p>
-            </div>
-            <button onclick="loadData()" class="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all underline decoration-yellow-500">🔄 VERİLERİ YENİLE</button>
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-yellow-500 uppercase tracking-tighter">Yönetim Paneli</h1>
+            <button onclick="loadData()" class="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold text-sm hover:bg-yellow-400">🔄 VERİLERİ YENİLE</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-center">
-            <div class="admin-card p-6 border-t-4 border-t-yellow-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">Bekleyen Onaylar</p>
-                <h2 id="stat-pending" class="text-3xl font-black text-white mt-2">0</h2>
-            </div>
-            <div class="admin-card p-6 border-t-4 border-t-blue-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">Aktif Yatırımlar</p>
-                <h2 id="stat-active" class="text-3xl font-black text-white mt-2">0</h2>
-            </div>
-            <div class="admin-card p-6 border-t-4 border-t-red-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">Çekim Talepleri</p>
-                <h2 id="stat-requests" class="text-3xl font-black text-white mt-2">0</h2>
-            </div>
-        </div>
-
-        <div class="admin-card overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-[#0d1117] text-gray-500 text-xs uppercase">
-                        <tr>
-                            <th class="p-4">Kullanıcı / ID</th>
-                            <th class="p-4">Plan / Tutar</th>
-                            <th class="p-4">Durum</th>
-                            <th class="p-4">Cüzdan Adresi</th>
-                            <th class="p-4 text-right">İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTableBody" class="text-sm">
-                        </tbody>
-                </table>
-            </div>
+        <div id="userList" class="space-y-6">
+            <p class="text-center text-gray-500">Yükleniyor...</p>
         </div>
     </div>
 
@@ -66,99 +30,91 @@
         async function loadData() {
             try {
                 const res = await fetch(`${API_URL}/admin/all`);
-                if (!res.ok) throw new Error("Veritabanı bağlantı hatası!");
                 const users = await res.json();
-                renderTable(users);
+                renderUsers(users);
             } catch (err) {
-                console.error(err);
-                alert("Veriler çekilemedi! MongoDB IP iznini (0.0.0.0/0) kontrol edin.");
+                alert("Veri çekme hatası: " + err.message);
             }
         }
 
-        function renderTable(users) {
-            const body = document.getElementById('adminTableBody');
-            body.innerHTML = '';
-            let p = 0, a = 0, r = 0;
+        function renderUsers(users) {
+            const list = document.getElementById('userList');
+            list.innerHTML = '';
+
+            if (users.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500">Henüz kullanıcı kaydı yok.</p>';
+                return;
+            }
 
             users.forEach(user => {
-                if (!user.investments || user.investments.length === 0) return;
+                const card = document.createElement('div');
+                card.className = 'admin-card p-6';
                 
-                user.investments.forEach(inv => {
-                    if(inv.status === 'Onay Bekliyor') p++;
-                    if(inv.status === 'Aktif') a++;
-                    if(inv.status.includes('Talebi')) r++;
+                // Kullanıcı Başlığı
+                let html = `
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-4 mb-4">
+                        <div>
+                            <h2 class="font-bold text-lg text-white">${user.name || 'Bilinmiyor'}</h2>
+                            <p class="text-xs text-gray-500 italic">ID: ${user.telegramId}</p>
+                        </div>
+                        <span class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold">TOPLAM ${user.investments.length} İŞLEM</span>
+                    </div>
+                `;
 
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-[#30363d] hover:bg-white/5 transition-all";
-                    row.innerHTML = `
-                        <td class="p-4">
-                            <div class="font-bold text-white">${user.name || 'Bilinmiyor'}</div>
-                            <div class="text-[10px] text-gray-500 font-mono">${user.telegramId}</div>
-                        </td>
-                        <td class="p-4">
-                            <div class="text-yellow-500 font-bold">${inv.planDays} Gün / $${inv.amount}</div>
-                            <div class="text-[10px] text-gray-400">Toplam Kâr: $${(inv.totalProfit || 0).toFixed(2)}</div>
-                        </td>
-                        <td class="p-4">
-                            <span class="status-badge ${getStatusClass(inv.status)}">${inv.status}</span>
-                        </td>
-                        <td class="p-4">
-                            <div class="text-[10px] font-mono text-gray-400 break-all w-32">${inv.userWallet || 'Henüz Yok'}</div>
-                        </td>
-                        <td class="p-4 text-right">${getActionButtons(user.telegramId, inv)}</td>
-                    `;
-                    body.appendChild(row);
-                });
-            });
+                // Yatırımlar Listesi
+                if (user.investments.length > 0) {
+                    user.investments.forEach(inv => {
+                        let statusColor = 'text-yellow-500';
+                        if(inv.status === 'Aktif') statusColor = 'text-green-500';
+                        if(inv.status === 'Iptal Edildi') statusColor = 'text-red-500';
 
-            document.getElementById('stat-pending').innerText = p;
-            document.getElementById('stat-active').innerText = a;
-            document.getElementById('stat-requests').innerText = r;
-        }
-
-        function getStatusClass(status) {
-            if(status === 'Onay Bekliyor') return 'bg-yellow-900/30 text-yellow-500 border border-yellow-500/20';
-            if(status === 'Aktif') return 'bg-green-900/30 text-green-500 border border-green-500/20';
-            if(status === 'Çekim Talebi') return 'bg-blue-900/30 text-blue-500 border border-blue-500/20';
-            if(status === 'İptal Talebi') return 'bg-red-900/30 text-red-500 border border-red-500/20';
-            return 'bg-gray-800 text-gray-400';
-        }
-
-        function getActionButtons(tgId, inv) {
-            if(inv.status === 'Onay Bekliyor') {
-                return `<button onclick="updateStatus('${tgId}', '${inv._id}', 'approve')" class="btn-approve text-white text-[10px] font-black px-4 py-2 rounded shadow-lg shadow-green-900/20">ONAYLA</button>`;
-            }
-            if(inv.status === 'Çekim Talebi' || inv.status === 'İptal Talebi') {
-                return `<button onclick="updateStatus('${tgId}', '${inv._id}', 'finalize')" class="btn-finalize text-white text-[10px] font-black px-4 py-2 rounded shadow-lg shadow-blue-900/20 uppercase tracking-tighter">ÖDEME YAPILDI</button>`;
-            }
-            return `<span class="text-gray-600 italic text-[10px]">Tamamlandı</span>`;
-        }
-
-        async function updateStatus(telegramId, investmentId, action) {
-            const endpoint = action === 'approve' ? 'approve' : 'finalize';
-            const msg = action === 'approve' ? "Bu yatırımı onaylayarak kazancı başlatmak istiyor musunuz?" : "Ödemeyi yaptığınızı ve bu işlemi kapatmak istediğinizi onaylıyor musunuz?";
-            
-            if(!confirm(msg)) return;
-
-            try {
-                const res = await fetch(`${API_URL}/admin/${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId, investmentId })
-                });
-                const result = await res.json();
-                if(result.success) {
-                    loadData();
+                        html += `
+                            <div class="flex flex-wrap items-center justify-between bg-black/30 p-4 rounded-lg mb-2 gap-4">
+                                <div class="flex gap-6">
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Miktar</p><p class="text-sm font-bold">$${inv.amount}</p></div>
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Vade</p><p class="text-sm font-bold">${inv.planDays} GÜN</p></div>
+                                    <div><p class="text-[10px] text-gray-500 uppercase">Durum</p><p class="text-sm font-bold ${statusColor}">${inv.status}</p></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    ${inv.status === 'Onay Bekliyor' ? 
+                                        `<button onclick="approveInvest('${user.telegramId}', '${inv._id}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-[10px] font-bold uppercase">Onayla</button>` : ''
+                                    }
+                                    <button onclick="deleteInvest('${user.telegramId}', '${inv._id}')" class="bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white px-4 py-2 rounded text-[10px] font-bold uppercase">Sil</button>
+                                </div>
+                            </div>
+                        `;
+                    });
                 } else {
-                    alert("Bir hata oluştu: " + result.message);
+                    html += '<p class="text-xs text-gray-600 italic">Bu kullanıcının henüz yatırımı yok.</p>';
                 }
-            } catch (err) { 
-                alert("Sunucu hatası!"); 
-            }
+
+                card.innerHTML = html;
+                list.appendChild(card);
+            });
         }
 
-        // Sayfa yüklendiğinde verileri çek
-        loadData();
+        async function approveInvest(tId, iId) {
+            if(!confirm("Bu yatırımı onaylıyor musunuz? (Geri sayım başlayacak)")) return;
+            const res = await fetch(`${API_URL}/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: tId, investId: iId })
+            });
+            if(res.ok) loadData();
+        }
+
+        async function deleteInvest(tId, iId) {
+            if(!confirm("Yatırımı silmek istediğinize emin misiniz?")) return;
+            const res = await fetch(`${API_URL}/admin/delete-invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegramId: tId, investId: iId })
+            });
+            if(res.ok) loadData();
+        }
+
+        // Sayfa açıldığında verileri yükle
+        window.onload = loadData;
     </script>
 </body>
 </html>
