@@ -5,148 +5,132 @@ const path = require('path');
 
 const app = express();
 
-// --- AYARLAR ---
-app.use(cors());
+// GÜVENLİK VE CORS AYARLARI
+app.use(cors({ origin: '*' }));
 app.use(express.json());
-app.use(express.static(__dirname)); // HTML dosyalarına erişim sağlar
+app.use(express.static(__dirname));
 
-// --- VERİTABANI BAĞLANTISI ---
-// Not: IP iznini (0.0.0.0/0) MongoDB Atlas'tan verdiğinden emin ol!
-const dbURI = "mongodb+srv://tgadmin:1Furkan2@cluster0.4bwu4ys.mongodb.net/cryptoInvest?retryWrites=true&w=majority";
+// MONGODB BAĞLANTISI
+const dbURI = "mongodb+srv://tgadmin:1Furkan2@cluster0.4bwu4ys.mongodb.net/cryptoInvest?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose.connect(dbURI)
   .then(() => console.log("✅ MongoDB Bağlantısı Başarılı"))
   .catch(err => console.log("❌ MongoDB Hatası:", err.message));
 
-// --- VERİ MODELİ ---
+// VERİ MODELİ
 const UserSchema = new mongoose.Schema({
-    telegramId: { type: String, required: true, unique: true },
+    telegramId: { type: String, required: true },
     name: String,
     investments: [{
         planDays: Number,
         amount: Number,
         totalProfit: Number,
-        status: { 
-            type: String, 
-            default: 'Onay Bekliyor', 
-            enum: ['Onay Bekliyor', 'Aktif', 'Çekim Talebi', 'İptal Talebi', 'Tamamlandı'] 
-        },
-        userWallet: String,
-        createdAt: { type: Date, default: Date.now },
-        approvedAt: Date
+        status: { type: String, default: 'Onay Bekliyor' }, // 'Onay Bekliyor', 'Aktif', 'Iptal Edildi', 'Tamamlandı'
+        createdAt: { type: Date, default: Date.now }
     }]
 });
 
 const User = mongoose.model('User', UserSchema);
 
-// --- API YOLLARI (ROUTES) ---
+// --- KULLANICI YOLLARI ---
 
-// 1. Kullanıcı Girişi / Kaydı
+// Kullanıcıyı veritabanına kaydeder veya bilgilerini getirir
 app.post('/api/sync', async (req, res) => {
     try {
         const { telegramId, name } = req.body;
+        if(!telegramId) return res.status(400).json({error: "ID eksik"});
         let user = await User.findOne({ telegramId });
         if (!user) {
-            user = new User({ telegramId, name, investments: [] });
+            user = new User({ telegramId, name: name || "Bilinmiyor", investments: [] });
             await user.save();
         }
         res.json(user);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. Yeni Yatırım Bildirimi (Miktar Dahil)
+// Yeni yatırım bildirimini kaydeder
 app.post('/api/invest', async (req, res) => {
     try {
         const { telegramId, planDays, amount, profit } = req.body;
+        let user = await User.findOne({ telegramId });
+        if (!user) user = new User({ telegramId, name: "Yeni Kullanıcı", investments: [] });
+        
+        user.investments.push({ 
+            planDays: Number(planDays), 
+            amount: Number(amount), 
+            totalProfit: Number(profit),
+            status: 'Onay Bekliyor',
+            createdAt: new Date()
+        });
+        
+        await user.save();
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Kullanıcının yatırımını iptal etmesi
+app.post('/api/cancel-invest', async (req, res) => {
+    try {
+        const { telegramId, investId } = req.body;
         const user = await User.findOne({ telegramId });
-        if (user) {
-            user.investments.push({ 
-                planDays: Number(planDays), 
-                amount: Number(amount), 
-                totalProfit: Number(profit), 
-                status: 'Onay Bekliyor' 
-            });
+        if (!user) return res.status(404).json({ success: false });
+
+        const invest = user.investments.id(investId);
+        if(invest) {
+            invest.status = 'Iptal Edildi';
             await user.save();
             res.json({ success: true });
         } else {
-            res.status(404).json({ success: false, message: "Kullanıcı bulunamadı" });
+            res.status(404).json({ success: false });
         }
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// 3. Para Çekme veya İptal Talebi
-app.post('/api/request-payout', async (req, res) => {
-    try {
-        const { telegramId, invId, address, type } = req.body;
-        const user = await User.findOne({ telegramId });
-        if (user) {
-            const inv = user.investments.id(invId);
-            if (inv) {
-                inv.status = (type === 'cancel') ? 'İptal Talebi' : 'Çekim Talebi';
-                inv.userWallet = address;
-                await user.save();
-                res.json({ success: true });
-            }
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+// --- ADMIN YOLLARI ---
 
-// 4. Admin: Tüm Verileri Getir
+// Tüm kullanıcıları ve yatırımları listeler (Admin Paneli için)
 app.get('/api/admin/all', async (req, res) => {
     try {
         const users = await User.find();
         res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 5. Admin: Yatırımı Onayla (Kazanç Sayacı Başlar)
+// Yatırımı onaylama (Geri sayımı başlatır)
 app.post('/api/admin/approve', async (req, res) => {
     try {
-        const { telegramId, investmentId } = req.body;
+        const { telegramId, investId } = req.body;
         const user = await User.findOne({ telegramId });
-        if (user) {
-            const inv = user.investments.id(investmentId);
-            if (inv) {
-                inv.status = 'Aktif';
-                inv.approvedAt = new Date();
-                await user.save();
-                res.json({ success: true });
-            }
+        const invest = user.investments.id(investId);
+        if(invest) {
+            invest.status = 'Aktif';
+            invest.createdAt = new Date(); // Onay saati = Geri sayım başlangıcı
+            await user.save();
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ success: false });
         }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// 6. Admin: Ödemeyi Tamamla ve Kapat
-app.post('/api/admin/finalize', async (req, res) => {
+// Yatırımı silme (Admin Paneli için)
+app.post('/api/admin/delete-invest', async (req, res) => {
     try {
-        const { telegramId, investmentId } = req.body;
+        const { telegramId, investId } = req.body;
         const user = await User.findOne({ telegramId });
-        if (user) {
-            const inv = user.investments.id(investmentId);
-            if (inv) {
-                inv.status = 'Tamamlandı';
-                await user.save();
-                res.json({ success: true });
-            }
+        if(user) {
+            user.investments.pull({ _id: investId });
+            await user.save();
+            res.json({ success: true });
         }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// --- SUNUCU BAŞLATMA ---
+// TEST YOLU
+app.get('/api/test', (req, res) => res.json({ status: "Sistem Aktif" }));
+
+// SUNUCU BAŞLATMA
 const PORT = process.env.PORT || 10000;
-// 0.0.0.0 ekleyerek sunucunun dış dünyadan gelen her isteği dinlemesini sağlıyoruz
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Sunucu her yöne açık: ${PORT}`);
 });
