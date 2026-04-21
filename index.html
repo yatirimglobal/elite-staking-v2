@@ -15,7 +15,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-active { color: #f3ba2f !important; }
-        .gradient-text { background: linear-gradient(45deg, #f3ba2f, #f0d07d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body class="pb-32">
@@ -28,8 +27,9 @@
                 <span class="text-[9px] text-gray-500 uppercase tracking-widest">Elite Member</span>
             </div>
         </div>
-        <div class="bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-            <span class="text-[10px] font-bold text-yellow-500">VIP Sinyal: Aktif</span>
+        <div class="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-right min-w-[100px]">
+            <p class="text-[8px] text-gray-500 uppercase font-black tracking-tighter">Toplam Varlık</p>
+            <span id="totalBalanceHeader" class="text-xs font-bold text-green-400 font-orbitron">$0.0000</span>
         </div>
     </div>
 
@@ -152,34 +152,55 @@
 
         function updateUIRuntime() {
             if(!userData || !userData.investments) return;
-            userData.investments.forEach(inv => {
-                if(inv.status !== 'Aktif') return;
-                const startTime = new Date(inv.createdAt).getTime();
-                const duration = inv.planDays * 24 * 60 * 60 * 1000; 
-                const now = new Date().getTime();
-                const diff = (startTime + duration) - now;
-                const timerEl = document.getElementById(`timer-${inv._id}`);
-                const profitEl = document.getElementById(`profit-${inv._id}`);
-                const btn = document.getElementById(`btn-${inv._id}`);
+            
+            let totalLiveBalance = 0; // Header için toplam bakiye değişkeni
 
-                if(diff > 0) {
-                    const d = Math.floor(diff / (1000*60*60*24));
-                    const h = Math.floor((diff / (1000*60*60)) % 24);
-                    const m = Math.floor((diff / (1000*60)) % 60);
-                    const s = Math.floor((diff / 1000) % 60);
-                    if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}d ${s}s`;
-                    const progress = (now - startTime) / duration;
-                    if(profitEl) profitEl.innerText = `$${(inv.totalProfit * progress).toFixed(4)}`;
-                } else {
-                    if(timerEl) timerEl.innerText = "VADE DOLDU";
-                    if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
-                    if(btn) { 
-                        btn.disabled = false; 
-                        btn.classList.replace('bg-green-500/10', 'bg-green-600'); 
-                        btn.classList.replace('text-gray-600', 'text-white'); 
+            userData.investments.forEach(inv => {
+                // Eğer yatırım Onay Bekliyor ise sadece ana parayı ekle
+                if(inv.status === 'Onay Bekliyor') {
+                    totalLiveBalance += inv.amount;
+                    return;
+                }
+                
+                // Eğer yatırım Aktif ise kârı hesapla
+                if(inv.status === 'Aktif') {
+                    const startTime = new Date(inv.createdAt).getTime();
+                    const duration = inv.planDays * 24 * 60 * 60 * 1000; 
+                    const now = new Date().getTime();
+                    const diff = (startTime + duration) - now;
+                    
+                    const timerEl = document.getElementById(`timer-${inv._id}`);
+                    const profitEl = document.getElementById(`profit-${inv._id}`);
+                    const btn = document.getElementById(`btn-${inv._id}`);
+
+                    if(diff > 0) {
+                        const d = Math.floor(diff / (1000*60*60*24));
+                        const h = Math.floor((diff / (1000*60*60)) % 24);
+                        const m = Math.floor((diff / (1000*60)) % 60);
+                        const s = Math.floor((diff / 1000) % 60);
+                        if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}d ${s}s`;
+                        
+                        const progress = (now - startTime) / duration;
+                        const currentProfit = inv.totalProfit * progress;
+                        
+                        if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(4)}`;
+                        totalLiveBalance += (inv.amount + currentProfit); // Toplam bakiyeye ekle
+                    } else {
+                        if(timerEl) timerEl.innerText = "VADE DOLDU";
+                        if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
+                        totalLiveBalance += (inv.amount + inv.totalProfit);
+                        
+                        if(btn) { 
+                            btn.disabled = false; 
+                            btn.classList.replace('bg-green-500/10', 'bg-green-600'); 
+                            btn.classList.replace('text-gray-600', 'text-white'); 
+                        }
                     }
                 }
             });
+
+            // HEADER'daki toplam bakiye alanını güncelle
+            document.getElementById('totalBalanceHeader').innerText = `$${totalLiveBalance.toFixed(4)}`;
         }
 
         function renderInvestments() {
