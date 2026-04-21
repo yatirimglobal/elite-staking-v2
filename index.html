@@ -153,16 +153,10 @@
         function updateUIRuntime() {
             if(!userData || !userData.investments) return;
             
-            let totalLiveBalance = 0; // Header için toplam bakiye değişkeni
+            let totalLiveBalance = 0; 
 
             userData.investments.forEach(inv => {
-                // Eğer yatırım Onay Bekliyor ise sadece ana parayı ekle
-                if(inv.status === 'Onay Bekliyor') {
-                    totalLiveBalance += inv.amount;
-                    return;
-                }
-                
-                // Eğer yatırım Aktif ise kârı hesapla
+                // KRİTİK DEĞİŞİKLİK: Sadece durumu 'Aktif' olanları hesaba katıyoruz.
                 if(inv.status === 'Aktif') {
                     const startTime = new Date(inv.createdAt).getTime();
                     const duration = inv.planDays * 24 * 60 * 60 * 1000; 
@@ -184,7 +178,7 @@
                         const currentProfit = inv.totalProfit * progress;
                         
                         if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(4)}`;
-                        totalLiveBalance += (inv.amount + currentProfit); // Toplam bakiyeye ekle
+                        totalLiveBalance += (inv.amount + currentProfit); 
                     } else {
                         if(timerEl) timerEl.innerText = "VADE DOLDU";
                         if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
@@ -199,7 +193,6 @@
                 }
             });
 
-            // HEADER'daki toplam bakiye alanını güncelle
             document.getElementById('totalBalanceHeader').innerText = `$${totalLiveBalance.toFixed(4)}`;
         }
 
