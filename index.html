@@ -192,14 +192,15 @@
                         <span class="text-gray-500">${inv.planDays} GÜN LIKIDITE</span>
                         <span class="${inv.status === 'Aktif' ? 'text-green-400' : 'text-yellow-500'} italic">${inv.status}</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div><p class="text-[9px] text-gray-500 uppercase">Yatırılan</p><p class="text-sm font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
-                        <div><p class="text-[9px] text-gray-500 uppercase">Net Kar</p><p class="text-sm font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.00</p></div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div><p class="text-[8px] text-gray-500 uppercase">Yatırılan</p><p class="text-xs font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
+                        <div><p class="text-[8px] text-gray-500 uppercase">Anlık Kar</p><p class="text-xs font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.00</p></div>
+                        <div><p class="text-[8px] text-blue-400 uppercase font-black">Vade Sonu</p><p class="text-xs font-bold text-white font-orbitron">$${(inv.amount + inv.totalProfit).toFixed(2)}</p></div>
                     </div>
                     <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-[0.2em]" id="timer-${inv._id}">--:--:--</p>
                     <div class="flex gap-2">
-                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[9px] font-black uppercase">İptal</button>
-                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[9px] font-black uppercase">Çekim</button>
+                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest">İptal</button>
+                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest">Çekim Yap</button>
                     </div>
                 </div>
             `).reverse().join('');
