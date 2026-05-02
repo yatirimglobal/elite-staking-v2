@@ -2,90 +2,134 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Staking | Admin Panel</title>
+    <title>Elite Admin | Kontrol Paneli</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body { background: #0f1113; color: #fff; font-family: 'Inter', sans-serif; }
-        .admin-card { background: #1a1d21; border: 1px solid #2d3139; border-radius: 12px; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
+        body { background: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
     </style>
 </head>
 <body class="p-6">
-    <div class="max-w-5xl mx-auto">
-        <div id="loginArea" class="flex flex-col items-center justify-center mt-32">
-            <h1 class="text-2xl font-bold text-yellow-500 mb-6 uppercase italic">Elite Admin Access</h1>
-            <div class="flex gap-2 bg-[#1a1d21] p-2 rounded-2xl border border-gray-800">
-                <input type="password" id="adminPass" placeholder="Şifre" class="bg-transparent p-3 outline-none text-white w-48">
-                <button onclick="login()" class="bg-yellow-500 text-black px-6 py-3 rounded-xl font-bold text-xs">GİRİŞ</button>
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <h1 class="text-2xl font-black text-yellow-500 font-orbitron uppercase italic">Yatırım Yönetimi</h1>
+            <div class="flex gap-2">
+                <input type="password" id="pass" placeholder="Admin Şifresi" class="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg focus:border-yellow-500 outline-none">
+                <button onclick="fetchAdminData()" class="bg-yellow-500 text-black font-bold px-6 py-2 rounded-lg hover:bg-yellow-400">YÜKLE</button>
             </div>
         </div>
 
-        <div id="adminContent" class="hidden">
-            <div class="flex justify-between items-center mb-8">
-                <h1 class="text-2xl font-bold text-yellow-500 uppercase italic">Yönetim Paneli</h1>
-                <button onclick="loadData()" class="bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold text-sm">🔄 YENİLE</button>
+        <!-- Özet Sayaçları -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass-card p-5 border-l-4 border-blue-500">
+                <p class="text-gray-400 text-xs font-bold">TOPLAM AKTİF ANAPARA</p>
+                <h2 id="sumCapital" class="text-2xl font-black mt-1">$0.00</h2>
             </div>
-            <div id="userList" class="space-y-6"></div>
+            <div class="glass-card p-5 border-l-4 border-green-500">
+                <p class="text-gray-400 text-xs font-bold">ÖDENECEK TOPLAM KÂR</p>
+                <h2 id="sumProfit" class="text-2xl font-black mt-1 text-green-400">$0.00</h2>
+            </div>
+            <div class="glass-card p-5 border-l-4 border-yellow-500">
+                <p class="text-gray-400 text-xs font-bold">TOPLAM ÖDEME YÜKÜ</p>
+                <h2 id="sumTotal" class="text-2xl font-black mt-1 text-yellow-500">$0.00</h2>
+            </div>
+        </div>
+
+        <!-- Tablo -->
+        <div class="glass-card overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-bold">
+                    <tr>
+                        <th class="p-4">Kullanıcı ID</th>
+                        <th class="p-4">Vade</th>
+                        <th class="p-4">Anapara</th>
+                        <th class="p-4">Kâr</th>
+                        <th class="p-4">Vade Sonu</th>
+                        <th class="p-4">Durum</th>
+                        <th class="p-4 text-right">Aksiyon</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="text-sm">
+                    <!-- JS ile dolacak -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://elite-staking-v2.onrender.com/api';
-        let savedPassword = "";
+        async function fetchAdminData() {
+            const password = document.getElementById('pass').value;
+            const res = await fetch('/api/admin/all', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ password })
+            });
 
-        async function login() { savedPassword = document.getElementById('adminPass').value; loadData(); }
-
-        async function loadData() {
-            try {
-                const res = await fetch(`${API_URL}/admin/all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPassword }) });
-                if(!res.ok) throw new Error("Şifre Yanlış!");
-                const users = await res.json();
-                document.getElementById('loginArea').classList.add('hidden');
-                document.getElementById('adminContent').classList.remove('hidden');
-                renderUsers(users);
-            } catch (err) { alert(err.message); }
+            if(res.status !== 200) return alert("Hatalı Şifre!");
+            const users = await res.json();
+            renderTable(users);
         }
 
-        function renderUsers(users) {
-            const list = document.getElementById('userList');
-            list.innerHTML = users.map(user => `
-                <div class="admin-card p-6">
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-4 mb-4">
-                        <div><h2 class="font-bold text-lg text-white">${user.name || 'Bilinmiyor'}</h2><p class="text-xs text-gray-500 italic">ID: ${user.telegramId}</p></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-yellow-500 text-[10px] font-bold uppercase mb-3">Aktif İşlemler</h3>
-                            ${user.investments.map(inv => `
-                                <div class="bg-black/30 p-3 rounded mb-2 flex justify-between items-center border border-white/5">
-                                    <span class="text-xs">$${inv.amount.toFixed(2)} - ${inv.status}</span>
-                                    <div class="flex gap-2">
-                                        ${inv.status === 'Onay Bekliyor' ? `<button onclick="action('approve', '${user.telegramId}', '${inv._id}')" class="bg-green-600 text-white px-3 py-1 rounded text-[9px] font-bold">ONAYLA</button>` : ''}
-                                        <button onclick="action('delete-invest', '${user.telegramId}', '${inv._id}')" class="bg-red-600/20 text-red-500 px-3 py-1 rounded text-[9px] font-bold">SİL</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div>
-                            <h3 class="text-red-400 text-[10px] font-bold uppercase mb-3">Çekim Talepleri</h3>
-                            ${user.withdrawals && user.withdrawals.length > 0 ? user.withdrawals.map(w => `
-                                <div class="bg-red-500/5 border border-red-500/10 p-3 rounded text-[11px] mb-2">
-                                    <p class="font-bold text-white">Miktar: $${w.amount.toFixed(2)}</p>
-                                    <p class="text-yellow-500 select-all mt-1 font-mono">${w.wallet}</p>
-                                    <p class="text-[9px] text-gray-500 mt-1">${new Date(w.date).toLocaleString()}</p>
-                                </div>
-                            `).join('') : '<p class="text-[10px] text-gray-600 italic">Talep yok.</p>'}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+        function renderTable(users) {
+            const body = document.getElementById('tableBody');
+            body.innerHTML = '';
+            let cap = 0, prof = 0;
+
+            users.forEach(u => {
+                u.investments.forEach(inv => {
+                    if(inv.status === 'Aktif') {
+                        cap += inv.amount;
+                        prof += inv.totalProfit;
+                    }
+                    const total = inv.amount + inv.totalProfit;
+                    body.innerHTML += `
+                        <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                            <td class="p-4 font-mono text-xs">${u.telegramId}</td>
+                            <td class="p-4">${inv.planDays} GÜN</td>
+                            <td class="p-4 font-bold">$${inv.amount.toFixed(2)}</td>
+                            <td class="p-4 text-green-400">+$${inv.totalProfit.toFixed(2)}</td>
+                            <td class="p-4 font-black text-yellow-500">$${total.toFixed(2)}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded text-[10px] font-bold ${inv.status === 'Aktif' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">
+                                    ${inv.status}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                ${inv.status === 'Onay Bekliyor' ? 
+                                    `<button onclick="approve('${u.telegramId}', '${inv._id}')" class="bg-green-600 px-3 py-1 rounded text-[10px] font-bold">ONAYLA</button>` : 
+                                    `<button onclick="deleteInv('${u.telegramId}', '${inv._id}')" class="bg-red-900/50 text-red-500 px-3 py-1 rounded text-[10px]">SİL</button>`
+                                }
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+
+            document.getElementById('sumCapital').innerText = '$' + cap.toFixed(2);
+            document.getElementById('sumProfit').innerText = '$' + prof.toFixed(2);
+            document.getElementById('sumTotal').innerText = '$' + (cap + prof).toFixed(2);
         }
 
-        async function action(type, tId, iId) {
-            if(!confirm("Emin misiniz?")) return;
-            const res = await fetch(`${API_URL}/admin/${type}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: savedPassword, telegramId: tId, investId: iId }) });
-            if(res.ok) loadData();
+        async function approve(telegramId, investId) {
+            const password = document.getElementById('pass').value;
+            const res = await fetch('/api/admin/approve', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ password, telegramId, investId })
+            });
+            if(res.ok) fetchAdminData();
+        }
+
+        async function deleteInv(telegramId, investId) {
+            if(!confirm("Bu kaydı tamamen silmek istediğine emin misin?")) return;
+            const password = document.getElementById('pass').value;
+            const res = await fetch('/api/admin/delete-invest', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ password, telegramId, investId })
+            });
+            if(res.ok) fetchAdminData();
         }
     </script>
 </body>
