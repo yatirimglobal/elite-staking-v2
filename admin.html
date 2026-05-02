@@ -2,134 +2,166 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Admin | Kontrol Paneli</title>
+    <title>Elite Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-        body { background: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+        body { background: #0b0f1a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.5rem; }
     </style>
 </head>
 <body class="p-6">
+
     <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <h1 class="text-2xl font-black text-yellow-500 font-orbitron uppercase italic">Yatırım Yönetimi</h1>
-            <div class="flex gap-2">
-                <input type="password" id="pass" placeholder="Admin Şifresi" class="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg focus:border-yellow-500 outline-none">
-                <button onclick="fetchAdminData()" class="bg-yellow-500 text-black font-bold px-6 py-2 rounded-lg hover:bg-yellow-400">YÜKLE</button>
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+            <h1 class="text-3xl font-black text-yellow-500 font-orbitron italic uppercase">Yönetim Merkezi</h1>
+            <div class="flex gap-3">
+                <input type="password" id="adminPass" placeholder="Şifre" class="bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl outline-none focus:border-yellow-500">
+                <button onclick="loadData()" class="bg-yellow-500 text-black font-bold px-6 py-2 rounded-xl hover:scale-105 transition-all uppercase text-sm">Yenile ↻</button>
             </div>
         </div>
 
-        <!-- Özet Sayaçları -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="glass-card p-5 border-l-4 border-blue-500">
-                <p class="text-gray-400 text-xs font-bold">TOPLAM AKTİF ANAPARA</p>
-                <h2 id="sumCapital" class="text-2xl font-black mt-1">$0.00</h2>
+        <!-- Özet Paneli -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="glass-card p-6 border-l-4 border-blue-500">
+                <p class="text-gray-400 text-[10px] font-black uppercase">Aktif Anapara</p>
+                <h2 id="sumCap" class="text-2xl font-orbitron mt-2">$0.00</h2>
             </div>
-            <div class="glass-card p-5 border-l-4 border-green-500">
-                <p class="text-gray-400 text-xs font-bold">ÖDENECEK TOPLAM KÂR</p>
-                <h2 id="sumProfit" class="text-2xl font-black mt-1 text-green-400">$0.00</h2>
+            <div class="glass-card p-6 border-l-4 border-green-500">
+                <p class="text-gray-400 text-[10px] font-black uppercase">Ödenecek Toplam Kâr</p>
+                <h2 id="sumProf" class="text-2xl font-orbitron mt-2 text-green-400">$0.00</h2>
             </div>
-            <div class="glass-card p-5 border-l-4 border-yellow-500">
-                <p class="text-gray-400 text-xs font-bold">TOPLAM ÖDEME YÜKÜ</p>
-                <h2 id="sumTotal" class="text-2xl font-black mt-1 text-yellow-500">$0.00</h2>
+            <div class="glass-card p-6 border-l-4 border-red-500">
+                <p class="text-gray-400 text-[10px] font-black uppercase">Bekleyen Çekimler</p>
+                <h2 id="sumWith" class="text-2xl font-orbitron mt-2 text-red-400">$0.00</h2>
             </div>
         </div>
 
-        <!-- Tablo -->
-        <div class="glass-card overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-bold">
+        <!-- YATIRIMLAR TABLOSU -->
+        <h3 class="text-xl font-bold mb-4 text-yellow-500 flex items-center gap-2">💰 Aktif Yatırımlar</h3>
+        <div class="glass-card overflow-hidden mb-12">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
                     <tr>
-                        <th class="p-4">Kullanıcı ID</th>
-                        <th class="p-4">Vade</th>
-                        <th class="p-4">Anapara</th>
-                        <th class="p-4">Kâr</th>
-                        <th class="p-4">Vade Sonu</th>
-                        <th class="p-4">Durum</th>
-                        <th class="p-4 text-right">Aksiyon</th>
+                        <th class="p-5">Kullanıcı</th>
+                        <th class="p-5">Kalan Gün</th>
+                        <th class="p-5">Ana Para</th>
+                        <th class="p-5 text-green-400">Net Kâr</th>
+                        <th class="p-5 text-yellow-500">Vade Sonu</th>
+                        <th class="p-5">Durum</th>
+                        <th class="p-5 text-right">İşlem</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody" class="text-sm">
-                    <!-- JS ile dolacak -->
-                </tbody>
+                <tbody id="investTable" class="divide-y divide-white/5 text-sm"></tbody>
+            </table>
+        </div>
+
+        <!-- ÇEKİM TALEPLERİ TABLOSU -->
+        <h3 class="text-xl font-bold mb-4 text-red-500 flex items-center gap-2">🏦 Para Çekme Talepleri</h3>
+        <div class="glass-card overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
+                    <tr>
+                        <th class="p-5">Kullanıcı</th>
+                        <th class="p-5">Miktar</th>
+                        <th class="p-5">Cüzdan Adresi (TRC20)</th>
+                        <th class="p-5">Tarih</th>
+                        <th class="p-5">Durum</th>
+                        <th class="p-5 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="withdrawTable" class="divide-y divide-white/5 text-sm"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        async function fetchAdminData() {
-            const password = document.getElementById('pass').value;
-            const res = await fetch('/api/admin/all', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ password })
-            });
+        async function loadData() {
+            const password = document.getElementById('adminPass').value;
+            if(!password) return alert("Şifre giriniz.");
 
-            if(res.status !== 200) return alert("Hatalı Şifre!");
-            const users = await res.json();
-            renderTable(users);
+            try {
+                const res = await fetch('/api/admin/all', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ password })
+                });
+                if(res.status !== 200) return alert("Yetkisiz!");
+                const users = await res.json();
+                renderAll(users);
+            } catch (e) { alert("Hata oluştu."); }
         }
 
-        function renderTable(users) {
-            const body = document.getElementById('tableBody');
-            body.innerHTML = '';
-            let cap = 0, prof = 0;
+        function renderAll(users) {
+            const iTable = document.getElementById('investTable');
+            const wTable = document.getElementById('withdrawTable');
+            iTable.innerHTML = ''; wTable.innerHTML = '';
 
-            users.forEach(u => {
-                u.investments.forEach(inv => {
-                    if(inv.status === 'Aktif') {
-                        cap += inv.amount;
-                        prof += inv.totalProfit;
-                    }
-                    const total = inv.amount + inv.totalProfit;
-                    body.innerHTML += `
-                        <tr class="border-b border-white/5 hover:bg-white/[0.02]">
-                            <td class="p-4 font-mono text-xs">${u.telegramId}</td>
-                            <td class="p-4">${inv.planDays} GÜN</td>
-                            <td class="p-4 font-bold">$${inv.amount.toFixed(2)}</td>
-                            <td class="p-4 text-green-400">+$${inv.totalProfit.toFixed(2)}</td>
-                            <td class="p-4 font-black text-yellow-500">$${total.toFixed(2)}</td>
-                            <td class="p-4">
-                                <span class="px-2 py-1 rounded text-[10px] font-bold ${inv.status === 'Aktif' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">
-                                    ${inv.status}
-                                </span>
+            let cap = 0, prof = 0, withD = 0;
+
+            users.forEach(user => {
+                // Yatırımları İşle
+                user.investments.forEach(inv => {
+                    const created = new Date(inv.createdAt);
+                    const diff = Math.ceil(inv.planDays - (new Date() - created) / (1000*60*60*24));
+                    const remaining = inv.status === 'Aktif' ? (diff > 0 ? diff : 'Doldu') : '-';
+                    
+                    if(inv.status === 'Aktif') { cap += inv.amount; prof += inv.totalProfit; }
+
+                    iTable.innerHTML += `
+                        <tr class="hover:bg-white/5">
+                            <td class="p-5 font-bold">${user.telegramId}</td>
+                            <td class="p-5 font-black text-blue-400">${remaining} ${typeof remaining === 'number' ? 'Gün' : ''}</td>
+                            <td class="p-5">$${inv.amount.toFixed(2)}</td>
+                            <td class="p-5 text-green-400">+$${inv.totalProfit.toFixed(2)}</td>
+                            <td class="p-5 text-yellow-500 font-black">$${(inv.amount + inv.totalProfit).toFixed(2)}</td>
+                            <td class="p-5"><span class="px-2 py-1 rounded text-[10px] font-black ${inv.status === 'Aktif' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">${inv.status}</span></td>
+                            <td class="p-5 text-right">
+                                ${inv.status === 'Onay Bekliyor' ? `<button onclick="approveInvest('${user.telegramId}','${inv._id}')" class="bg-green-600 px-3 py-1 rounded-lg text-xs font-bold">ONAYLA</button>` : `<button onclick="deleteInvest('${user.telegramId}','${inv._id}')" class="text-gray-600 text-xs">SİL</button>`}
                             </td>
-                            <td class="p-4 text-right">
-                                ${inv.status === 'Onay Bekliyor' ? 
-                                    `<button onclick="approve('${u.telegramId}', '${inv._id}')" class="bg-green-600 px-3 py-1 rounded text-[10px] font-bold">ONAYLA</button>` : 
-                                    `<button onclick="deleteInv('${u.telegramId}', '${inv._id}')" class="bg-red-900/50 text-red-500 px-3 py-1 rounded text-[10px]">SİL</button>`
-                                }
+                        </tr>`;
+                });
+
+                // Çekimleri İşle
+                user.withdrawals.forEach(w => {
+                    if(w.status === 'Beklemede') withD += w.amount;
+                    wTable.innerHTML += `
+                        <tr class="hover:bg-white/5">
+                            <td class="p-5 font-bold">${user.telegramId}</td>
+                            <td class="p-5 font-black text-red-400">$${w.amount.toFixed(2)}</td>
+                            <td class="p-5 font-mono text-xs text-gray-400">${w.wallet}</td>
+                            <td class="p-5 text-xs">${new Date(w.date).toLocaleDateString()}</td>
+                            <td class="p-5"><span class="text-[10px] font-black uppercase ${w.status === 'Beklemede' ? 'text-yellow-500' : 'text-green-500'}">${w.status}</span></td>
+                            <td class="p-5 text-right">
+                                ${w.status === 'Beklemede' ? `<button onclick="approveWithdraw('${user.telegramId}','${w._id}')" class="bg-red-600 px-3 py-1 rounded-lg text-xs font-bold italic">ÖDENDİ İŞARETLE</button>` : '✅'}
                             </td>
-                        </tr>
-                    `;
+                        </tr>`;
                 });
             });
 
-            document.getElementById('sumCapital').innerText = '$' + cap.toFixed(2);
-            document.getElementById('sumProfit').innerText = '$' + prof.toFixed(2);
-            document.getElementById('sumTotal').innerText = '$' + (cap + prof).toFixed(2);
+            document.getElementById('sumCap').innerText = '$' + cap.toFixed(2);
+            document.getElementById('sumProf').innerText = '$' + prof.toFixed(2);
+            document.getElementById('sumWith').innerText = '$' + withD.toFixed(2);
         }
 
-        async function approve(telegramId, investId) {
-            const password = document.getElementById('pass').value;
-            const res = await fetch('/api/admin/approve', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ password, telegramId, investId })
-            });
-            if(res.ok) fetchAdminData();
+        async function approveInvest(telegramId, investId) {
+            const password = document.getElementById('adminPass').value;
+            await fetch('/api/admin/approve', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, investId }) });
+            loadData();
         }
 
-        async function deleteInv(telegramId, investId) {
-            if(!confirm("Bu kaydı tamamen silmek istediğine emin misin?")) return;
-            const password = document.getElementById('pass').value;
-            const res = await fetch('/api/admin/delete-invest', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ password, telegramId, investId })
-            });
-            if(res.ok) fetchAdminData();
+        async function approveWithdraw(telegramId, withdrawId) {
+            const password = document.getElementById('adminPass').value;
+            await fetch('/api/admin/approve-withdraw', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, withdrawId }) });
+            loadData();
+        }
+
+        async function deleteInvest(telegramId, investId) {
+            if(!confirm("Kaydı silmek istediğine emin misin?")) return;
+            const password = document.getElementById('adminPass').value;
+            await fetch('/api/admin/delete-invest', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, investId }) });
+            loadData();
         }
     </script>
 </body>
