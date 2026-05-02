@@ -1,192 +1,121 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const axios = require('axios'); // Bildirimler için gerekli
+const axios = require('axios');
+
 const app = express();
-
-app.use(cors({ origin: '*' }));
+app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
-
-// --- 🛠 AYARLAR VE GÜVENLİK ---
-const ADMIN_PASSWORD = "1Fr.1806Rf21"; 
-const dbURI = "mongodb+srv://tgadmin:1Furkan2@cluster0.4bwu4ys.mongodb.net/cryptoInvest?retryWrites=true&w=majority&appName=Cluster0";
-
-// --- TELEGRAM BOT BİLGİLERİN ---
-const BOT_TOKEN = "8612171484:AAG-k7i3gwsmDoemUZ2c_T57C47l03JOeyU"; 
-const MY_CHAT_ID = "1694656329"; 
-
-// 🔔 ADMİNE (SANA) BİLDİRİM GÖNDERME FONKSİYONU
-async function notifyAdmin(msg) {
-    try {
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            chat_id: MY_CHAT_ID,
-            text: msg,
-            parse_mode: 'HTML'
-        });
-    } catch (err) {
-        console.log("Admin bildirim hatası:", err.message);
-    }
-}
-
-// 🔔 KULLANICIYA BİLDİRİM GÖNDERME FONKSİYONU
-async function notifyUser(userId, msg) {
-    try {
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            chat_id: userId,
-            text: msg,
-            parse_mode: 'HTML'
-        });
-    } catch (err) {
-        console.log("Kullanıcıya mesaj iletilemedi:", err.message);
-    }
-}
 
 // --- VERİTABANI BAĞLANTISI ---
-mongoose.connect(dbURI)
-    .then(() => console.log("✅ MongoDB Bağlı"))
-    .catch(err => console.log("❌ DB Hatası:", err));
+// MongoDB URL'ni buraya eklemeyi unutma
+const MONGO_URI = process.env.MONGO_URI || "MONGODB_URL_BURAYA";
+mongoose.connect(MONGO_URI).then(() => console.log("MongoDB Bağlandı")).catch(err => console.log(err));
 
+// --- MODELLER ---
 const UserSchema = new mongoose.Schema({
-    telegramId: { type: String, required: true },
+    telegramId: String,
     name: String,
     investments: [{
-        planDays: Number, 
-        amount: Number, 
+        planDays: Number,
+        amount: Number,
         totalProfit: Number,
         status: { type: String, default: 'Onay Bekliyor' },
         createdAt: { type: Date, default: Date.now }
-    }],
-    withdrawals: [{
-        amount: Number,
-        wallet: String,
-        status: { type: String, default: 'Beklemede' },
-        date: { type: Date, default: Date.now }
     }]
 });
 const User = mongoose.model('User', UserSchema);
 
-// --- ⚙️ KULLANICI ROTALARI ---
+// --- TELEGRAM AYARLARI ---
+const BOT_TOKEN = process.env.BOT_TOKEN || "BOT_TOKEN_BURAYA";
+const ADMIN_ID = process.env.ADMIN_ID || "SENIN_TELEGRAM_IDN";
 
-// Kullanıcı Kaydı / Senkronizasyon
+async function notifyAdmin(message) {
+    try {
+        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            chat_id: ADMIN_ID,
+            text: message,
+            parse_mode: 'HTML'
+        });
+    } catch (e) { console.error("Telegram Bildirim Hatası:", e); }
+}
+
+// --- API ROTLARI ---
+
+// Kullanıcı Senkronizasyonu
 app.post('/api/sync', async (req, res) => {
-    try {
-        const { telegramId, name } = req.body;
-        let user = await User.findOne({ telegramId });
-        if (!user) { 
-            user = new User({ telegramId, name, investments: [], withdrawals: [] }); 
-            await user.save(); 
-        }
-        res.json(user);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    const { telegramId, name } = req.body;
+    let user = await User.findOne({ telegramId });
+    if (!user) {
+        user = new User({ telegramId, name, investments: [] });
+        await user.save();
+    }
+    res.json(user);
 });
 
-// Yeni Yatırım Bildirimi Yapma
+// Yeni Yatırım Talebi
 app.post('/api/invest', async (req, res) => {
-    try {
-        const { telegramId, planDays, amount, profit } = req.body;
-        let user = await User.findOne({ telegramId });
-        if(user) {
-            user.investments.push({ 
-                planDays: Number(planDays), 
-                amount: Number(amount), 
-                totalProfit: Number(profit) 
-            });
-            await user.save();
-
-            // Sana Bildirim At
-            notifyAdmin(`💰 <b>YENİ YATIRIM GELDİ!</b>\n\n👤 Kullanıcı: <code>${telegramId}</code>\n💵 Miktar: <b>$${amount}</b>\n🗓 Plan: <b>${planDays} Gün</b>\n\n✅ Onay için panelinizi kontrol edin.`);
-
-            res.json({ success: true });
-        }
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    const { telegramId, planDays, amount, profit } = req.body;
+    const user = await User.findOne({ telegramId });
+    if (user) {
+        const newInv = { planDays, amount, totalProfit: profit, status: 'Onay Bekliyor' };
+        user.investments.push(newInv);
+        await user.save();
+        
+        notifyAdmin(`🔔 <b>YENİ YATIRIM TALEBİ</b>\n\n👤 Kullanıcı: ${user.name}\n💰 Tutar: $${amount}\n🗓 Vade: ${planDays} Gün\n\nLütfen admin panelinden onaylayın.`);
+        res.json({ success: true });
+    }
 });
 
-// Para Çekme Talebi Oluşturma
-app.post('/api/withdraw', async (req, res) => {
+// --- GÜNCELLENEN İPTAL ROTASI ---
+app.post('/api/cancel-invest', async (req, res) => {
     try {
-        const { telegramId, amount, wallet } = req.body;
+        const { telegramId, investId, refundWallet } = req.body;
         const user = await User.findOne({ telegramId });
-        if(user) {
-            user.withdrawals.push({ amount: Number(amount), wallet, status: 'Beklemede' });
-            await user.save();
+        if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
 
-            // Sana Bildirim At
-            notifyAdmin(`🚨 <b>ÇEKİM TALEBİ!</b>\n\n👤 Kullanıcı: <code>${telegramId}</code>\n💸 Miktar: <b>$${amount}</b>\n🏦 Cüzdan: <code>${wallet}</code>`);
-
-            res.json({ success: true });
-        }
-    } catch (e) { res.status(500).json({ success: false }); }
-});
-
-// --- 👮 ADMİN ROTALARI ---
-
-// Tüm Verileri Getir
-app.post('/api/admin/all', async (req, res) => {
-    try {
-        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
-        const users = await User.find();
-        res.json(users);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// Yatırımı Onayla (Kullanıcıya Bildirim Gider)
-app.post('/api/admin/approve', async (req, res) => {
-    try {
-        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
-        const { telegramId, investId } = req.body;
-        const user = await User.findOne({ telegramId });
         const inv = user.investments.id(investId);
-        
-        if(inv) { 
-            inv.status = 'Aktif'; 
-            inv.createdAt = new Date(); 
-            await user.save(); 
 
-            // Kullanıcıya mesaj gönder
-            const msg = `✅ <b>Yatırımınız Onaylandı</b>\n\n$${inv.amount.toFixed(2)} tutarındaki yatırımınız doğrulanmış ve aktif edilmiştir. ${inv.planDays} günlük kazanç süreniz başlamıştır.\n\nBol kazançlar dileriz! 🚀`;
-            notifyUser(telegramId, msg);
+        if (inv) {
+            const refundAmount = inv.amount * 0.98; // %2 Kesinti
+            const kesinti = inv.amount * 0.02;
 
-            res.json({ success: true }); 
+            const logMsg = `
+⚠️ <b>YATIRIM İPTAL TALEBİ</b>
+
+👤 <b>Kullanıcı:</b> ${user.name} (<code>${telegramId}</code>)
+💰 <b>İade Tutarı:</b> $${refundAmount.toFixed(2)}
+📉 <b>Kesinti (%2):</b> $${kesinti.toFixed(2)}
+🏦 <b>İade Cüzdanı (TRC20):</b> 
+<code>${refundWallet}</code>
+
+<i>Not: Yatırım sistemden silindi. Lütfen manuel olarak cüzdana transfer yapın.</i>`;
+
+            // Yatırımı diziden kaldır
+            user.investments.pull({ _id: investId });
+            await user.save();
+
+            // Admin'e (Sana) detaylı bildirim gönder
+            await notifyAdmin(logMsg);
+
+            res.json({ success: true, message: "İptal başarılı" });
+        } else {
+            res.status(404).json({ error: "Yatırım bulunamadı" });
         }
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({ error: "Sunucu hatası" }); 
+    }
 });
 
-// Çekim Talebini Onayla (Kullanıcıya Bildirim Gider)
-app.post('/api/admin/approve-withdraw', async (req, res) => {
-    try {
-        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
-        const { telegramId, withdrawId } = req.body;
-        const user = await User.findOne({ telegramId });
-        const w = user.withdrawals.id(withdrawId);
-        
-        if(w) { 
-            w.status = 'Tamamlandı'; 
-            await user.save(); 
-
-            // Kullanıcıya mesaj gönder
-            const msg = `💸 <b>Ödemeniz Tamamlandı</b>\n\n$${w.amount.toFixed(2)} tutarındaki çekim talebiniz onaylanmış ve transfer işleminiz başarıyla gerçekleştirilmiştir.\n\nBol kazançlar dileriz! ✨`;
-            notifyUser(telegramId, msg);
-
-            res.json({ success: true }); 
-        }
-    } catch (e) { res.status(500).json({ error: e.message }); }
+// Para Çekme Talebi
+app.post('/api/withdraw', async (req, res) => {
+    const { telegramId, amount, wallet } = req.body;
+    const user = await User.findOne({ telegramId });
+    
+    notifyAdmin(`💰 <b>PARA ÇEKME TALEBİ</b>\n\n👤 Kullanıcı: ${user ? user.name : telegramId}\n💵 Tutar: $${amount}\n🏦 Cüzdan: <code>${wallet}</code>`);
+    res.json({ success: true });
 });
 
-// Yatırımı Sil
-app.post('/api/admin/delete-invest', async (req, res) => {
-    try {
-        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
-        const { telegramId, investId } = req.body;
-        const user = await User.findOne({ telegramId });
-        if(user) { 
-            user.investments.pull({ _id: investId }); 
-            await user.save(); 
-            res.json({ success: true }); 
-        }
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// --- SUNUCU BAŞLATMA ---
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Sunucu Aktif ve Bot Bildirimleri Entegre Edildi!`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server ${PORT} portunda çalışıyor`));
