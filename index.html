@@ -2,51 +2,277 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Staking - Yatırım Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Crypto Staking</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 15px; max-width: 400px; margin: 20px auto; border: 1px solid #334155; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
-        button { background: #38bdf8; color: #0f172a; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 95%; }
-        button:hover { background: #7dd3fc; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        body { background: #080a0c; color: #eaeaeb; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; transition: all 0.3s ease; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-active { color: #f3ba2f !important; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinning { animation: spin 0.8s linear; }
     </style>
 </head>
-<body>
-    <h1>🚀 Elite Staking V2</h1>
-    <p>Geleceğinize bugün yatırım yapın.</p>
+<body class="pb-32">
 
-    <div class="card">
-        <h3>Yatırım Yap</h3>
-        <input type="text" id="userName" placeholder="Adınız Soyadınız">
-        <input type="number" id="amount" placeholder="Yatırım Tutarı ($)">
-        <select id="plan">
-            <option value="7">7 Günlük Plan (%10 Kâr)</option>
-            <option value="30">30 Günlük Plan (%50 Kâr)</option>
-        </select>
-        <button onclick="sendInvest()">Yatırımı Başlat</button>
+    <!-- ÜST BAR -->
+    <div class="p-6 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div id="uAvatar" class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center font-black text-black text-lg font-orbitron shadow-[0_0_15px_rgba(243,186,47,0.3)]">?</div>
+            <div>
+                <h1 id="uName" class="font-bold text-sm tracking-tight uppercase leading-none italic">Yükleniyor...</h1>
+                <span class="text-[9px] text-gray-500 uppercase tracking-widest">Elite Member</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button onclick="manualRefresh()" id="refreshBtn" class="bg-white/5 p-2.5 rounded-xl border border-white/10 active:scale-90 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-yellow-500" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                </svg>
+            </button>
+            <div class="bg-white/5 px-4 py-2 rounded-2xl border border-white/10 text-right min-w-[90px]">
+                <p class="text-[8px] text-gray-500 uppercase font-black tracking-tighter">Toplam Varlık</p>
+                <span id="totalBalanceHeader" class="text-xs font-bold text-green-400 font-orbitron">$0.0000</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-6">
+        <!-- ANA SAYFA: PLANLAR -->
+        <div id="tab-home" class="tab-content active">
+            <h2 class="font-orbitron text-lg font-black mb-6 text-yellow-500 uppercase tracking-tighter italic text-xs">Staking Planları</h2>
+            <div class="space-y-4">
+                <!-- 10 Günlük Plan -->
+                <div class="glass-card p-6 border-l-4 border-yellow-500 relative overflow-hidden" onclick="openInvestModal(10, 8)">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <h3 class="font-bold text-white uppercase text-sm">10 GÜN VADE</h3>
+                            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %0.80 Kar Oranı</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-green-400 font-orbitron text-xl font-bold">%8</span>
+                            <p class="text-[8px] text-gray-500 uppercase font-black">Getiri</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center relative z-10">
+                        <span class="text-[9px] bg-white/5 px-2 py-1 rounded text-gray-400">Min: 20 USDT</span>
+                        <button class="bg-yellow-500 text-black text-[9px] font-black px-4 py-2 rounded-lg">KATIL</button>
+                    </div>
+                </div>
+                <!-- 30 Günlük Plan -->
+                <div class="glass-card p-6 border-l-4 border-blue-500 relative overflow-hidden" onclick="openInvestModal(30, 30)">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <h3 class="font-bold text-white uppercase text-sm">30 GÜN VADE</h3>
+                            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %1.00 Kar Oranı</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-green-400 font-orbitron text-xl font-bold">%30</span>
+                            <p class="text-[8px] text-gray-500 uppercase font-black">Getiri</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center relative z-10">
+                        <span class="text-[9px] bg-white/5 px-2 py-1 rounded text-gray-400">Min: 20 USDT</span>
+                        <button class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-lg">KATIL</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VARLIKLARIM SAYFASI -->
+        <div id="tab-investments" class="tab-content">
+            <h2 class="font-orbitron text-lg font-black mb-6 text-blue-500 uppercase tracking-tighter italic text-xs">Varlıklarım</h2>
+            <div id="myInvestmentsList" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- ALT NAVİGASYON -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl flex justify-around py-4 z-50">
+        <button onclick="switchTab('home')" id="navHome" class="nav-active flex flex-col items-center gap-1">
+            <span class="text-xl">💎</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Kazan</span>
+        </button>
+        <button onclick="switchTab('investments')" id="navInvest" class="text-gray-500 flex flex-col items-center gap-1">
+            <span class="text-xl">📊</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Varlıklar</span>
+        </button>
+    </nav>
+
+    <!-- YATIRIM MODAL -->
+    <div id="modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-6 z-[100] backdrop-blur-xl">
+        <div class="glass-card w-full max-w-sm p-8 border-yellow-500/20">
+            <div id="step1">
+                <h3 class="font-orbitron text-center text-md font-black text-white mb-6 uppercase italic text-sm">Yatırım Tutarı</h3>
+                <input type="number" id="investAmount" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-center text-xl font-bold text-yellow-500 mb-6 focus:outline-none" placeholder="0.00 USDT">
+                <button onclick="toStep2()" class="w-full bg-yellow-500 text-black font-black py-4 rounded-xl text-xs uppercase">Devam Et</button>
+            </div>
+            <div id="step2" class="hidden text-center">
+                <h3 class="font-orbitron text-[10px] font-black text-white mb-4 uppercase italic">TRC20 Ödeme Adresi</h3>
+                <div class="bg-black p-4 rounded-xl border border-dashed border-yellow-500/50 mb-6 select-all">
+                    <p id="walletAddr" class="font-mono text-[9px] text-yellow-500 break-all uppercase">BURAYA_KENDI_TRC20_ADRESINI_YAZ</p>
+                </div>
+                <button onclick="confirmPay()" class="w-full bg-green-600 text-white font-black py-4 rounded-xl text-xs uppercase">Ödemeyi Tamamladım</button>
+            </div>
+            <button onclick="closeModal()" class="w-full mt-4 text-gray-500 text-[10px] font-bold uppercase tracking-widest">Vazgeç</button>
+        </div>
     </div>
 
     <script>
-        async function sendInvest() {
-            const data = {
-                telegramId: "123456", // Bu normalde bottan otomatik gelmeli
-                name: document.getElementById('userName').value,
-                amount: document.getElementById('amount').value,
-                planDays: document.getElementById('plan').value
-            };
+        const tg = window.Telegram.WebApp;
+        const API_URL = 'https://elite-staking-v2.onrender.com/api';
+        let currentPlan = null;
+        let userData = null;
 
-            const response = await fetch('/api/invest', {
+        window.onload = () => {
+            tg.ready(); tg.expand();
+            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Kullanıcı" };
+            document.getElementById('uName').innerText = user.first_name.toUpperCase();
+            document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
+            syncUser(user);
+            setInterval(updateUIRuntime, 1000);
+        };
+
+        async function syncUser(user) {
+            try {
+                const res = await fetch(`${API_URL}/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name }) });
+                userData = await res.json();
+                renderInvestments();
+            } catch(e) { console.error(e); }
+        }
+
+        async function cancelInvest(id) {
+            // 1. Onay
+            const c1 = confirm("Yatırımınızı iptal etmek istediğinize emin misiniz? %2 kesinti uygulanacaktır.");
+            if(!c1) return;
+
+            // 2. Cüzdan Adresi İsteme
+            const refundWallet = prompt("İadenin yapılacağı USDT (TRC20) Cüzdan Adresinizi Yazın:");
+            if(!refundWallet || refundWallet.length < 10) {
+                alert("Geçerli bir cüzdan adresi girmelisiniz!");
+                return;
+            }
+
+            // 3. İşlemi Sunucuya Gönderme
+            try {
+                const res = await fetch(`${API_URL}/cancel-invest`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        telegramId: userData.telegramId, 
+                        investId: id,
+                        refundWallet: refundWallet // Adres eklendi
+                    }) 
+                });
+                if(res.ok) {
+                    alert("İptal talebiniz ve cüzdan adresiniz yöneticiye iletildi. İadeniz 24 saat içinde yapılacaktır.");
+                    syncUser({ id: userData.telegramId });
+                }
+            } catch(e) { alert("Bir hata oluştu."); }
+        }
+
+        async function withdrawRequest(id, amount) {
+            const wallet = prompt("Kazancın gönderileceği TRC20 Adresi:");
+            if(!wallet) return;
+            const res = await fetch(`${API_URL}/withdraw`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ telegramId: userData.telegramId, amount: amount, wallet: wallet })
             });
-
-            if (response.ok) {
-                alert("Yatırım talebiniz başarıyla gönderildi! Onay bekleniyor.");
-            } else {
-                alert("Bir hata oluştu.");
-            }
+            if(res.ok) alert("Çekim talebiniz yöneticiye iletildi.");
         }
+
+        function updateUIRuntime() {
+            if(!userData || !userData.investments) return;
+            let totalLiveBalance = 0; 
+
+            userData.investments.forEach(inv => {
+                if(inv.status === 'Aktif') {
+                    const startTime = new Date(inv.createdAt).getTime();
+                    const duration = inv.planDays * 24 * 60 * 60 * 1000; 
+                    const now = new Date().getTime();
+                    const endTime = startTime + duration;
+                    const diff = endTime - now;
+
+                    const timerEl = document.getElementById(`timer-${inv._id}`);
+                    const profitEl = document.getElementById(`profit-${inv._id}`);
+                    const btn = document.getElementById(`btn-${inv._id}`);
+
+                    if(diff > 0) {
+                        const d = Math.floor(diff / (1000*60*60*24));
+                        const h = Math.floor((diff / (1000*60*60)) % 24);
+                        const m = Math.floor((diff / (1000*60)) % 60);
+                        const s = Math.floor((diff / 1000) % 60);
+                        if(timerEl) timerEl.innerText = `${d}G ${h}S ${m}D ${s}S`;
+
+                        const progress = (now - startTime) / duration;
+                        const currentProfit = inv.totalProfit * progress;
+                        if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(6)}`;
+                        totalLiveBalance += (inv.amount + currentProfit); 
+                    } else {
+                        if(timerEl) timerEl.innerText = "VADE TAMAMLANDI";
+                        if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
+                        totalLiveBalance += (inv.amount + inv.totalProfit);
+                        if(btn) { 
+                            btn.disabled = false; 
+                            btn.classList.replace('bg-green-500/10', 'bg-green-600'); 
+                            btn.classList.replace('text-gray-600', 'text-white'); 
+                        }
+                    }
+                }
+            });
+            document.getElementById('totalBalanceHeader').innerText = `$${totalLiveBalance.toFixed(4)}`;
+        }
+
+        function renderInvestments() {
+            const list = document.getElementById('myInvestmentsList');
+            if(!userData.investments.length) { list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic font-black uppercase">Yatırım bulunamadı.</p>'; return; }
+            list.innerHTML = userData.investments.map(inv => `
+                <div class="glass-card p-5 border-l-2 ${inv.status === 'Aktif' ? 'border-green-500' : 'border-yellow-500'}">
+                    <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase tracking-widest">
+                        <span class="text-gray-500">${inv.planDays} GÜN</span>
+                        <span class="${inv.status === 'Aktif' ? 'text-green-400' : 'text-yellow-500'} italic">${inv.status}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div><p class="text-[7px] text-gray-500 uppercase">Anapara</p><p class="text-[11px] font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
+                        <div><p class="text-[7px] text-gray-500 uppercase">Biriken</p><p class="text-[11px] font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.000000</p></div>
+                        <div><p class="text-[7px] text-blue-400 uppercase font-black">Hedef</p><p class="text-[11px] font-bold text-white font-orbitron">$${(inv.amount + inv.totalProfit).toFixed(2)}</p></div>
+                    </div>
+                    <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-[0.2em]" id="timer-${inv._id}">HESAPLANIYOR...</p>
+                    <div class="flex gap-2">
+                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase transition-all">İptal Et</button>
+                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase transition-all">Parayı Çek</button>
+                    </div>
+                </div>
+            `).reverse().join('');
+        }
+
+        function openInvestModal(days, rate) { currentPlan = { days, rate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
+        function toStep2() { 
+            const val = document.getElementById('investAmount').value; 
+            if(val < 20) return alert("Minimum yatırım tutarı 20 USDT'dir."); 
+            currentPlan.amount = Number(val); 
+            document.getElementById('step1').classList.add('hidden'); 
+            document.getElementById('step2').classList.remove('hidden'); 
+        }
+        async function confirmPay() { 
+            const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId, planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); 
+            if(res.ok) { alert("Yatırım bildirildi. Onay bekliyor."); closeModal(); syncUser({id: userData.telegramId}); } 
+        }
+        function switchTab(t) { 
+            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
+            document.getElementById('tab-'+t).classList.add('active'); 
+            document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
+            document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
+        }
+        function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
+        function manualRefresh() { syncUser({ id: tg.initDataUnsafe?.user?.id || "12345" }); }
     </script>
 </body>
 </html>
