@@ -48,39 +48,25 @@
         <div id="tab-home" class="tab-content active">
             <h2 class="font-orbitron text-lg font-black mb-6 text-yellow-500 uppercase tracking-tighter italic">Staking Planları</h2>
             <div class="space-y-4">
-                <!-- 10 Günlük Plan -->
-                <div class="glass-card p-6 border-l-4 border-yellow-500 relative overflow-hidden" onclick="openInvestModal(10, 8)">
-                    <div class="flex justify-between items-start relative z-10">
-                        <div>
-                            <h3 class="font-bold text-white uppercase text-sm">10 GÜN VADE</h3>
-                            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %0.80 Kar Oranı</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-green-400 font-orbitron text-xl font-bold">%8</span>
-                            <p class="text-[8px] text-gray-500 uppercase font-black">Getiri</p>
-                        </div>
+                <div class="glass-card p-6 border-l-4 border-yellow-500 relative" onclick="openInvestModal(10, 8)">
+                    <div class="flex justify-between items-start">
+                        <div><h3 class="font-bold text-white uppercase text-sm">10 GÜN VADE</h3><p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %0.80 Kar</p></div>
+                        <div class="text-right"><span class="text-green-400 font-orbitron text-xl font-bold">%8</span></div>
                     </div>
-                    <div class="mt-4 flex justify-between items-center relative z-10">
+                    <div class="mt-4 flex justify-between items-center">
                         <span class="text-[9px] bg-white/5 px-2 py-1 rounded text-gray-400">Min: 20 USDT</span>
-                        <button class="bg-yellow-500 text-black text-[9px] font-black px-4 py-2 rounded-lg">KATIL</button>
+                        <button class="bg-yellow-500 text-black text-[9px] font-black px-4 py-2 rounded-lg uppercase">Katıl</button>
                     </div>
                 </div>
 
-                <!-- 30 Günlük Plan -->
-                <div class="glass-card p-6 border-l-4 border-blue-500 relative overflow-hidden" onclick="openInvestModal(30, 30)">
-                    <div class="flex justify-between items-start relative z-10">
-                        <div>
-                            <h3 class="font-bold text-white uppercase text-sm">30 GÜN VADE</h3>
-                            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %1.00 Kar Oranı</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-green-400 font-orbitron text-xl font-bold">%30</span>
-                            <p class="text-[8px] text-gray-500 uppercase font-black">Getiri</p>
-                        </div>
+                <div class="glass-card p-6 border-l-4 border-blue-500 relative" onclick="openInvestModal(30, 30)">
+                    <div class="flex justify-between items-start">
+                        <div><h3 class="font-bold text-white uppercase text-sm">30 GÜN VADE</h3><p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">Günlük %1.00 Kar</p></div>
+                        <div class="text-right"><span class="text-green-400 font-orbitron text-xl font-bold">%30</span></div>
                     </div>
-                    <div class="mt-4 flex justify-between items-center relative z-10">
+                    <div class="mt-4 flex justify-between items-center">
                         <span class="text-[9px] bg-white/5 px-2 py-1 rounded text-gray-400">Min: 20 USDT</span>
-                        <button class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-lg">KATIL</button>
+                        <button class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-lg uppercase">Katıl</button>
                     </div>
                 </div>
             </div>
@@ -103,7 +89,6 @@
         </button>
     </nav>
 
-    <!-- Yatırım Modalı -->
     <div id="modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-6 z-[100] backdrop-blur-xl">
         <div class="glass-card w-full max-w-sm p-8 border-yellow-500/20">
             <div id="step1">
@@ -124,27 +109,18 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        // API URL'sini kontrol et
         const API_URL = 'https://elite-staking-v2.onrender.com/api';
         let currentPlan = null;
         let userData = null;
 
         window.onload = () => {
             tg.ready(); tg.expand();
-            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Test" };
+            const user = tg.initDataUnsafe?.user || { id: "1694656329", first_name: "Furkan" };
             document.getElementById('uName').innerText = user.first_name.toUpperCase();
             document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
             syncUser(user);
             setInterval(updateUIRuntime, 1000);
         };
-
-        async function manualRefresh() {
-            const btn = document.getElementById('refreshBtn');
-            btn.classList.add('spinning');
-            const user = tg.initDataUnsafe?.user || { id: "12345" };
-            await syncUser(user);
-            setTimeout(() => btn.classList.remove('spinning'), 800);
-        }
 
         async function syncUser(user) {
             try {
@@ -158,14 +134,9 @@
             } catch(e) { console.error("Sync Error:", e); }
         }
 
-        // İPTAL TALEBİ FONKSİYONU (YENİ)
         async function cancelInvest(id) {
-            const wallet = prompt("Yatırım iptal edilecek. İade için TRC20 cüzdan adresinizi girin:\n(Not: %2 işlem kesintisi uygulanır)");
-            
-            if (!wallet || wallet.trim() === "") {
-                alert("İptal talebi için geçerli bir cüzdan adresi girmelisiniz.");
-                return;
-            }
+            const walletInput = prompt("İade için TRC20 cüzdan adresinizi girin:\n(Not: %2 işlem kesintisi uygulanır)");
+            if (!walletInput || walletInput.trim() === "") return alert("Cüzdan adresi gereklidir.");
 
             try {
                 const res = await fetch(`${API_URL}/invest/cancel-request`, { 
@@ -174,164 +145,56 @@
                     body: JSON.stringify({ 
                         telegramId: userData.telegramId.toString(), 
                         investId: id,
-                        wallet: wallet.trim()
+                        returnWallet: walletInput.trim() // API ile tam uyumlu isim
                     }) 
                 });
-
-                const data = await res.json();
-
                 if(res.ok) {
-                    alert("İptal talebiniz yöneticiye iletildi. Kontrol edildikten sonra cüzdanınıza gönderilecektir.");
+                    alert("İptal talebi yöneticiye iletildi.");
                     syncUser(userData);
                 } else {
-                    alert("Hata: " + (data.message || "Talep gönderilemedi."));
+                    alert("Talep iletilemedi.");
                 }
-            } catch (e) {
-                alert("Sunucu hatası. Lütfen sonra tekrar deneyin.");
-            }
-        }
-
-        async function withdrawRequest(id, amount) {
-            const wallet = prompt("Vade sonu çekim için TRC20 Adresi:");
-            if(!wallet) return;
-            const res = await fetch(`${API_URL}/withdraw`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegramId: userData.telegramId, amount: amount, wallet: wallet })
-            });
-            if(res.ok) alert("Çekim talebiniz başarıyla alındı.");
-        }
-
-        function updateUIRuntime() {
-            if(!userData || !userData.investments) return;
-            let totalLiveBalance = 0; 
-            userData.investments.forEach(inv => {
-                if(inv.status === 'Aktif') {
-                    const startTime = new Date(inv.createdAt).getTime();
-                    const duration = inv.planDays * 24 * 60 * 60 * 1000; 
-                    const now = new Date().getTime();
-                    const diff = (startTime + duration) - now;
-                    const timerEl = document.getElementById(`timer-${inv._id}`);
-                    const profitEl = document.getElementById(`profit-${inv._id}`);
-                    const btn = document.getElementById(`btn-${inv._id}`);
-                    
-                    if(diff > 0) {
-                        const d = Math.floor(diff / (1000*60*60*24));
-                        const h = Math.floor((diff / (1000*60*60)) % 24);
-                        const m = Math.floor((diff / (1000*60)) % 60);
-                        const s = Math.floor((diff / 1000) % 60);
-                        if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}d ${s}s`;
-                        const progress = (now - startTime) / duration;
-                        const currentProfit = inv.totalProfit * progress;
-                        if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(4)}`;
-                        totalLiveBalance += (inv.amount + currentProfit); 
-                    } else {
-                        if(timerEl) timerEl.innerText = "VADE DOLDU";
-                        if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
-                        totalLiveBalance += (inv.amount + inv.totalProfit);
-                        if(btn) { 
-                            btn.disabled = false; 
-                            btn.classList.replace('bg-green-500/10', 'bg-green-600'); 
-                            btn.classList.replace('text-gray-600', 'text-white'); 
-                        }
-                    }
-                }
-            });
-            document.getElementById('totalBalanceHeader').innerText = `$${totalLiveBalance.toFixed(4)}`;
+            } catch (e) { alert("Bağlantı hatası."); }
         }
 
         function renderInvestments() {
             const list = document.getElementById('myInvestmentsList');
             if(!userData.investments || !userData.investments.length) { 
-                list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic">Henüz bir yatırımınız bulunmuyor.</p>'; 
+                list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic uppercase tracking-widest">Yatırım Yok</p>'; 
                 return; 
             }
 
-            const statusColors = {
-                'Aktif': 'text-green-400',
-                'İptal Bekliyor': 'text-orange-500',
-                'İptal Edildi': 'text-red-500',
-                'Beklemede': 'text-yellow-500'
-            };
+            const statusColors = { 'Aktif': 'text-green-400', 'İptal Bekliyor': 'text-orange-500', 'İptal Edildi': 'text-red-500', 'Onay Bekliyor': 'text-yellow-500' };
 
             list.innerHTML = userData.investments.map(inv => {
                 const colorClass = statusColors[inv.status] || 'text-gray-400';
                 const isAktif = inv.status === 'Aktif';
-
                 return `
                 <div class="glass-card p-5 border-l-2 border-white/10">
-                    <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase tracking-widest">
+                    <div class="flex justify-between items-center mb-3 text-[9px] font-black uppercase">
                         <span class="text-gray-500">${inv.planDays} GÜN VADE</span>
-                        <span class="${colorClass} italic">${inv.status}</span>
+                        <span class="${colorClass}">${inv.status}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2 mb-4">
-                        <div><p class="text-[7px] text-gray-500 uppercase">Yatırılan</p><p class="text-[11px] font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
-                        <div><p class="text-[7px] text-gray-500 uppercase">Anlık Kar</p><p class="text-[11px] font-bold text-green-400 font-orbitron" id="profit-${inv._id}">$0.00</p></div>
-                        <div><p class="text-[7px] text-blue-400 uppercase font-black">Vade Sonu</p><p class="text-[11px] font-bold text-white font-orbitron">$${(inv.amount + inv.totalProfit).toFixed(2)}</p></div>
+                        <div><p class="text-[7px] text-gray-500 uppercase">Anapara</p><p class="text-[10px] font-bold">$${inv.amount}</p></div>
+                        <div><p class="text-[7px] text-gray-500 uppercase">Anlık Kar</p><p class="text-[10px] font-bold text-green-400" id="profit-${inv._id}">$0.00</p></div>
+                        <div><p class="text-[7px] text-blue-400 uppercase">Vade Sonu</p><p class="text-[10px] font-bold text-white">$${(inv.amount + inv.totalProfit).toFixed(2)}</p></div>
                     </div>
-                    <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-[0.2em]" id="timer-${inv._id}">--:--:--</p>
+                    <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-widest" id="timer-${inv._id}">00:00:00</p>
                     <div class="flex gap-2">
-                        <button onclick="cancelInvest('${inv._id}')" 
-                                ${!isAktif ? 'disabled' : ''} 
-                                class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase disabled:opacity-30">
-                                ${inv.status === 'İptal Bekliyor' ? 'Talep Alındı' : 'İptal Et'}
-                        </button>
-                        <button id="btn-${inv._id}" disabled 
-                                onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" 
-                                class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase">
-                                Çekim Yap
-                        </button>
+                        <button onclick="cancelInvest('${inv._id}')" ${!isAktif ? 'disabled' : ''} class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase disabled:opacity-20">İptal Talebi</button>
                     </div>
-                </div>
-                `;
+                </div>`;
             }).reverse().join('');
         }
 
-        function openInvestModal(days, rate) { 
-            currentPlan = { days, rate }; 
-            document.getElementById('step1').classList.remove('hidden'); 
-            document.getElementById('step2').classList.add('hidden'); 
-            document.getElementById('modal').classList.replace('hidden', 'flex'); 
-        }
-        
-        function toStep2() { 
-            const val = document.getElementById('investAmount').value; 
-            if(val < 20) return alert("Minimum yatırım tutarı 20 USDT'dir."); 
-            currentPlan.amount = Number(val); 
-            document.getElementById('step1').classList.add('hidden'); 
-            document.getElementById('step2').classList.remove('hidden'); 
-        }
-
-        async function confirmPay() { 
-            try {
-                const res = await fetch(`${API_URL}/invest`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        telegramId: userData.telegramId.toString(), 
-                        planDays: currentPlan.days, 
-                        amount: currentPlan.amount, 
-                        profit: currentPlan.amount * (currentPlan.rate/100) 
-                    }) 
-                }); 
-                if(res.ok) { 
-                    closeModal(); 
-                    alert("Ödeme bildirimi alındı, onay bekleniyor.");
-                    syncUser(userData); 
-                }
-            } catch (e) {
-                alert("İşlem sırasında bir hata oluştu.");
-            }
-        }
-
-        function switchTab(t) { 
-            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
-            document.getElementById('tab-'+t).classList.add('active'); 
-            document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
-            document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
-        }
-
+        // Diğer yardımcı fonksiyonlar (modal aç/kapat vb.) buraya gelecek...
+        function openInvestModal(days, rate) { currentPlan = { days, rate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
         function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
+        function toStep2() { const val = document.getElementById('investAmount').value; if(val < 20) return alert("Min: 20 USDT"); currentPlan.amount = Number(val); document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
+        async function confirmPay() { const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId.toString(), planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); if(res.ok) { closeModal(); alert("Bildirim Alındı."); syncUser(userData); } }
+        function switchTab(t) { document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('navHome').classList.toggle('nav-active', t==='home'); document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); }
+        function updateUIRuntime() { if(!userData || !userData.investments) return; userData.investments.forEach(inv => { if(inv.status === 'Aktif') { const startTime = new Date(inv.createdAt).getTime(); const duration = inv.planDays * 24 * 60 * 60 * 1000; const now = Date.now(); const diff = (startTime + duration) - now; if(diff > 0) { const d = Math.floor(diff / 86400000); const h = Math.floor((diff % 86400000) / 3600000); const m = Math.floor((diff % 3600000) / 60000); const s = Math.floor((diff % 60000) / 1000); document.getElementById(`timer-${inv._id}`).innerText = `${d}g ${h}s ${m}m ${s}s`; const progress = (now - startTime) / duration; document.getElementById(`profit-${inv._id}`).innerText = `$${(inv.totalProfit * progress).toFixed(4)}`; } } }); }
     </script>
 </body>
 </html>
