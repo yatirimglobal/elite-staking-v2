@@ -48,6 +48,7 @@
         <div id="tab-home" class="tab-content active">
             <h2 class="font-orbitron text-lg font-black mb-6 text-yellow-500 uppercase tracking-tighter italic">Staking Planları</h2>
             <div class="space-y-4">
+                <!-- 10 Günlük Plan -->
                 <div class="glass-card p-6 border-l-4 border-yellow-500 relative overflow-hidden" onclick="openInvestModal(10, 8)">
                     <div class="flex justify-between items-start relative z-10">
                         <div>
@@ -65,6 +66,7 @@
                     </div>
                 </div>
 
+                <!-- 30 Günlük Plan -->
                 <div class="glass-card p-6 border-l-4 border-blue-500 relative overflow-hidden" onclick="openInvestModal(30, 30)">
                     <div class="flex justify-between items-start relative z-10">
                         <div>
@@ -101,6 +103,7 @@
         </button>
     </nav>
 
+    <!-- Yatırım Modalı -->
     <div id="modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-6 z-[100] backdrop-blur-xl">
         <div class="glass-card w-full max-w-sm p-8 border-yellow-500/20">
             <div id="step1">
@@ -121,13 +124,14 @@
 
     <script>
         const tg = window.Telegram.WebApp;
+        // API URL'sini kontrol et
         const API_URL = 'https://elite-staking-v2.onrender.com/api';
         let currentPlan = null;
         let userData = null;
 
         window.onload = () => {
             tg.ready(); tg.expand();
-            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Kullanıcı" };
+            const user = tg.initDataUnsafe?.user || { id: "12345", first_name: "Test" };
             document.getElementById('uName').innerText = user.first_name.toUpperCase();
             document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
             syncUser(user);
@@ -144,27 +148,58 @@
 
         async function syncUser(user) {
             try {
-                const res = await fetch(`${API_URL}/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name }) });
+                const res = await fetch(`${API_URL}/sync`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name }) 
+                });
                 userData = await res.json();
                 renderInvestments();
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Sync Error:", e); }
         }
 
+        // İPTAL TALEBİ FONKSİYONU (YENİ)
         async function cancelInvest(id) {
-            if(!confirm("İptal edilsin mi? (%2 kesinti)")) return;
-            const res = await fetch(`${API_URL}/cancel-invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId, investId: id }) });
-            if(res.ok) syncUser(userData);
+            const wallet = prompt("Yatırım iptal edilecek. İade için TRC20 cüzdan adresinizi girin:\n(Not: %2 işlem kesintisi uygulanır)");
+            
+            if (!wallet || wallet.trim() === "") {
+                alert("İptal talebi için geçerli bir cüzdan adresi girmelisiniz.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/invest/cancel-request`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        telegramId: userData.telegramId.toString(), 
+                        investId: id,
+                        wallet: wallet.trim()
+                    }) 
+                });
+
+                const data = await res.json();
+
+                if(res.ok) {
+                    alert("İptal talebiniz yöneticiye iletildi. Kontrol edildikten sonra cüzdanınıza gönderilecektir.");
+                    syncUser(userData);
+                } else {
+                    alert("Hata: " + (data.message || "Talep gönderilemedi."));
+                }
+            } catch (e) {
+                alert("Sunucu hatası. Lütfen sonra tekrar deneyin.");
+            }
         }
 
         async function withdrawRequest(id, amount) {
-            const wallet = prompt("TRC20 Adresi:");
+            const wallet = prompt("Vade sonu çekim için TRC20 Adresi:");
             if(!wallet) return;
             const res = await fetch(`${API_URL}/withdraw`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramId: userData.telegramId, amount: amount, wallet: wallet })
             });
-            if(res.ok) alert("Talep alındı.");
+            if(res.ok) alert("Çekim talebiniz başarıyla alındı.");
         }
 
         function updateUIRuntime() {
@@ -179,6 +214,7 @@
                     const timerEl = document.getElementById(`timer-${inv._id}`);
                     const profitEl = document.getElementById(`profit-${inv._id}`);
                     const btn = document.getElementById(`btn-${inv._id}`);
+                    
                     if(diff > 0) {
                         const d = Math.floor(diff / (1000*60*60*24));
                         const h = Math.floor((diff / (1000*60*60)) % 24);
@@ -193,7 +229,11 @@
                         if(timerEl) timerEl.innerText = "VADE DOLDU";
                         if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
                         totalLiveBalance += (inv.amount + inv.totalProfit);
-                        if(btn) { btn.disabled = false; btn.classList.replace('bg-green-500/10', 'bg-green-600'); btn.classList.replace('text-gray-600', 'text-white'); }
+                        if(btn) { 
+                            btn.disabled = false; 
+                            btn.classList.replace('bg-green-500/10', 'bg-green-600'); 
+                            btn.classList.replace('text-gray-600', 'text-white'); 
+                        }
                     }
                 }
             });
@@ -202,12 +242,27 @@
 
         function renderInvestments() {
             const list = document.getElementById('myInvestmentsList');
-            if(!userData.investments.length) { list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic">Yatırım bulunamadı.</p>'; return; }
-            list.innerHTML = userData.investments.map(inv => `
+            if(!userData.investments || !userData.investments.length) { 
+                list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic">Henüz bir yatırımınız bulunmuyor.</p>'; 
+                return; 
+            }
+
+            const statusColors = {
+                'Aktif': 'text-green-400',
+                'İptal Bekliyor': 'text-orange-500',
+                'İptal Edildi': 'text-red-500',
+                'Beklemede': 'text-yellow-500'
+            };
+
+            list.innerHTML = userData.investments.map(inv => {
+                const colorClass = statusColors[inv.status] || 'text-gray-400';
+                const isAktif = inv.status === 'Aktif';
+
+                return `
                 <div class="glass-card p-5 border-l-2 border-white/10">
                     <div class="flex justify-between items-center mb-3 text-[10px] font-black uppercase tracking-widest">
-                        <span class="text-gray-500">${inv.planDays} GÜN</span>
-                        <span class="${inv.status === 'Aktif' ? 'text-green-400' : 'text-yellow-500'} italic">${inv.status}</span>
+                        <span class="text-gray-500">${inv.planDays} GÜN VADE</span>
+                        <span class="${colorClass} italic">${inv.status}</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2 mb-4">
                         <div><p class="text-[7px] text-gray-500 uppercase">Yatırılan</p><p class="text-[11px] font-bold font-orbitron">$${inv.amount.toFixed(2)}</p></div>
@@ -216,18 +271,31 @@
                     </div>
                     <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-[0.2em]" id="timer-${inv._id}">--:--:--</p>
                     <div class="flex gap-2">
-                        <button onclick="cancelInvest('${inv._id}')" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase">İptal</button>
-                        <button id="btn-${inv._id}" disabled onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase">Çekim</button>
+                        <button onclick="cancelInvest('${inv._id}')" 
+                                ${!isAktif ? 'disabled' : ''} 
+                                class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase disabled:opacity-30">
+                                ${inv.status === 'İptal Bekliyor' ? 'Talep Alındı' : 'İptal Et'}
+                        </button>
+                        <button id="btn-${inv._id}" disabled 
+                                onclick="withdrawRequest('${inv._id}', ${inv.amount + inv.totalProfit})" 
+                                class="flex-1 bg-green-500/10 text-gray-600 py-3 rounded-lg text-[8px] font-black uppercase">
+                                Çekim Yap
+                        </button>
                     </div>
                 </div>
-            `).reverse().join('');
+                `;
+            }).reverse().join('');
         }
 
-        function openInvestModal(days, rate) { currentPlan = { days, rate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
+        function openInvestModal(days, rate) { 
+            currentPlan = { days, rate }; 
+            document.getElementById('step1').classList.remove('hidden'); 
+            document.getElementById('step2').classList.add('hidden'); 
+            document.getElementById('modal').classList.replace('hidden', 'flex'); 
+        }
         
         function toStep2() { 
             const val = document.getElementById('investAmount').value; 
-            // BURADA LİMİTİ 20 OLARAK GÜNCELLEDİM
             if(val < 20) return alert("Minimum yatırım tutarı 20 USDT'dir."); 
             currentPlan.amount = Number(val); 
             document.getElementById('step1').classList.add('hidden'); 
@@ -235,15 +303,34 @@
         }
 
         async function confirmPay() { 
-            const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId, planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); 
-            if(res.ok) { closeModal(); syncUser(userData); } 
+            try {
+                const res = await fetch(`${API_URL}/invest`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        telegramId: userData.telegramId.toString(), 
+                        planDays: currentPlan.days, 
+                        amount: currentPlan.amount, 
+                        profit: currentPlan.amount * (currentPlan.rate/100) 
+                    }) 
+                }); 
+                if(res.ok) { 
+                    closeModal(); 
+                    alert("Ödeme bildirimi alındı, onay bekleniyor.");
+                    syncUser(userData); 
+                }
+            } catch (e) {
+                alert("İşlem sırasında bir hata oluştu.");
+            }
         }
+
         function switchTab(t) { 
             document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
             document.getElementById('tab-'+t).classList.add('active'); 
             document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
             document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
         }
+
         function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
     </script>
 </body>
