@@ -7,7 +7,9 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// --- ÖNEMLİ DEĞİŞİKLİK: STATİK DOSYALARI ANA DİZİNDEN OKU ---
+app.use(express.static(__dirname)); 
 
 // --- YAPILANDIRILMIŞ AYARLAR ---
 const BOT_TOKEN = '8612171484:AAG-k7i3gwsmDoemUZ2c_T57C47l03JOeyU';
@@ -43,7 +45,17 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
-// --- KULLANICI API UÇ NOKTALARI ---
+// --- API UÇ NOKTALARI ---
+
+// Ana sayfa isteği geldiğinde index.html'i gönder
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Admin sayfası isteği
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
 
 app.post('/api/user/data', async (req, res) => {
     try {
@@ -84,11 +96,9 @@ app.post('/api/invest/cancel-request', async (req, res) => {
 
             bot.sendMessage(ADMIN_ID, `⚠️ *İPTAL TALEBİ*\n\n👤 Kullanıcı: \`${telegramId}\` \n💵 Anapara: $${inv.amount}\n🏦 İade Adresi: \`${returnWallet}\``, { parse_mode: 'Markdown' });
             res.sendStatus(200);
-        } else { res.status(400).send("Geçersiz yatırım."); }
+        } else { res.status(400).send("Hata."); }
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
-// --- ADMIN API UÇ NOKTALARI ---
 
 app.post('/api/admin/all', async (req, res) => {
     if (req.body.password !== ADMIN_PASSWORD) return res.sendStatus(401);
@@ -116,6 +126,5 @@ app.post('/api/admin/delete-invest', async (req, res) => {
     res.sendStatus(200);
 });
 
-// Port Ayarı (Render için dinamik)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda aktif.`));
