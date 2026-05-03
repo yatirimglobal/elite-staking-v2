@@ -39,16 +39,17 @@
         </div>
 
         <!-- YATIRIMLAR TABLOSU -->
-        <h3 class="text-xl font-bold mb-4 text-yellow-500 flex items-center gap-2">💰 Aktif Yatırımlar & İptal Talepleri</h3>
+        <h3 class="text-xl font-bold mb-4 text-yellow-500 flex items-center gap-2">💰 Aktif Yatırımlar</h3>
         <div class="glass-card overflow-hidden mb-12">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
                     <tr>
                         <th class="p-5">Kullanıcı</th>
-                        <th class="p-5">Miktar</th>
+                        <th class="p-5">Kalan Gün</th>
+                        <th class="p-5">Ana Para</th>
+                        <th class="p-5 text-green-400">Net Kâr</th>
+                        <th class="p-5 text-yellow-500">Vade Sonu</th>
                         <th class="p-5">Durum</th>
-                        <th class="p-5">İade Adresi (TRC20)</th>
-                        <th class="p-5">Vade Sonu</th>
                         <th class="p-5 text-right">İşlem</th>
                     </tr>
                 </thead>
@@ -108,25 +109,16 @@
                     
                     if(inv.status === 'Aktif') { cap += inv.amount; prof += inv.totalProfit; }
 
-                    // Dinamik Durum Renkleri
-                    let statusClass = "bg-yellow-500/20 text-yellow-500";
-                    if(inv.status === 'Aktif') statusClass = "bg-green-500/20 text-green-500";
-                    if(inv.status === 'İptal Bekliyor') statusClass = "bg-orange-500/20 text-orange-500";
-
                     iTable.innerHTML += `
                         <tr class="hover:bg-white/5">
                             <td class="p-5 font-bold">${user.telegramId}</td>
-                            <td class="p-5 font-black">$${inv.amount.toFixed(2)}</td>
-                            <td class="p-5"><span class="px-2 py-1 rounded text-[10px] font-black ${statusClass}">${inv.status}</span></td>
-                            <td class="p-5 text-xs font-mono text-gray-400">${inv.returnWallet || '-'}</td>
-                            <td class="p-5 text-yellow-500 font-black">${remaining} ${typeof remaining === 'number' ? 'Gün' : ''}</td>
+                            <td class="p-5 font-black text-blue-400">${remaining} ${typeof remaining === 'number' ? 'Gün' : ''}</td>
+                            <td class="p-5">$${inv.amount.toFixed(2)}</td>
+                            <td class="p-5 text-green-400">+$${inv.totalProfit.toFixed(2)}</td>
+                            <td class="p-5 text-yellow-500 font-black">$${(inv.amount + inv.totalProfit).toFixed(2)}</td>
+                            <td class="p-5"><span class="px-2 py-1 rounded text-[10px] font-black ${inv.status === 'Aktif' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">${inv.status}</span></td>
                             <td class="p-5 text-right">
-                                ${inv.status === 'Onay Bekliyor' ? 
-                                    `<button onclick="approveInvest('${user.telegramId}','${inv._id}')" class="bg-green-600 px-3 py-1 rounded-lg text-xs font-bold">YATIRIMI ONAYLA</button>` : 
-                                 inv.status === 'İptal Bekliyor' ?
-                                    `<button onclick="deleteInvest('${user.telegramId}','${inv._id}')" class="bg-orange-600 px-3 py-1 rounded-lg text-xs font-bold italic">İADE YAPILDI (SİL)</button>` :
-                                    `<button onclick="deleteInvest('${user.telegramId}','${inv._id}')" class="text-red-500 text-xs font-bold">KAYDI SİL</button>`
-                                }
+                                ${inv.status === 'Onay Bekliyor' ? `<button onclick="approveInvest('${user.telegramId}','${inv._id}')" class="bg-green-600 px-3 py-1 rounded-lg text-xs font-bold">ONAYLA</button>` : `<button onclick="deleteInvest('${user.telegramId}','${inv._id}')" class="text-gray-600 text-xs">SİL</button>`}
                             </td>
                         </tr>`;
                 });
@@ -166,7 +158,7 @@
         }
 
         async function deleteInvest(telegramId, investId) {
-            if(!confirm("Bu kaydı silmek istediğine emin misin? (İptal isteği ise parayı gönderdiğinden emin ol!)")) return;
+            if(!confirm("Kaydı silmek istediğine emin misin?")) return;
             const password = document.getElementById('adminPass').value;
             await fetch('/api/admin/delete-invest', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, investId }) });
             loadData();
