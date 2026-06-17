@@ -6,10 +6,11 @@
     <title>EliteStaking - Crypto Investment & Lucky Box</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght=400;700;900&family=Inter:wght=300;400;600;700&display=swap');
         body { background: #0b0f12; color: #f3f4f6; font-family: 'Inter', sans-serif; }
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass-card { background: rgba(22, 28, 36, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        /* Bulanıklık (blur) efekti kaldırılarak netleştirilmiş kartlar */
+        .glass-card { background: rgb(22, 28, 36); border: 1px solid rgba(255, 255, 255, 0.05); }
         
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
@@ -29,6 +30,7 @@
 </head>
 <body class="p-4 md:p-8 max-w-5xl mx-auto">
 
+    <!-- HEADER -->
     <div class="flex justify-between items-center mb-8 pb-4 border-b border-white/5">
         <div>
             <h1 class="text-xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking</h1>
@@ -40,6 +42,7 @@
         </div>
     </div>
 
+    <!-- ÜST SEÇENEKLER -->
     <div class="grid grid-cols-2 gap-4 mb-6">
         <button onclick="openInvestModal()" class="glass-card hover:bg-yellow-500/10 text-yellow-500 font-bold py-4 rounded-xl text-xs uppercase tracking-wider transition-all border border-yellow-500/20 active:scale-95 text-center">
             🚀 Yatırım Paketleri (Staking)
@@ -49,8 +52,10 @@
         </button>
     </div>
 
+    <!-- MAIN GRID -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
+        <!-- 🎲 BÖLÜM 1: ŞANSLI KUTU OYUN ALANI -->
         <div class="glass-card rounded-2xl p-6 border border-purple-500/20 shadow-[0_0_30px_rgba(147,51,234,0.05)] flex flex-col items-center text-center">
             <span class="text-xs font-black tracking-widest uppercase text-purple-400 font-orbitron mb-2">🎁 Şanslı Kutu (Lucky Box)</span>
             <div class="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-full text-[11px] font-bold mb-4 border border-purple-500/20">
@@ -73,6 +78,7 @@
             </button>
         </div>
 
+        <!-- 💼 BÖLÜM 2: AKTİF YATIRIMLARINIZ (STAKING) -->
         <div class="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
             <div>
                 <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-4">💰 Aktif Yatırımlarınız</span>
@@ -84,6 +90,7 @@
 
     </div>
 
+    <!-- 📜 BÖLÜM 3: OYUN GEÇMİŞİ -->
     <div class="glass-card rounded-2xl p-6 mt-6 border border-white/5">
         <span class="text-xs font-black tracking-widest uppercase text-gray-400 font-orbitron block mb-4">🕒 Kutu Açma Geçmişiniz</span>
         <div class="overflow-x-auto">
@@ -104,14 +111,16 @@
         </div>
     </div>
 
-    <div id="investModal" class="fixed inset-0 bg-black/85 backdrop-filter blur-sm hidden flex items-center justify-center p-4 z-50">
+    <!-- 📦 MODAL 1: YATIRIM PAKETİ SEÇME MODALI (Bulanıklık Efektleri Kaldırıldı) -->
+    <div id="investModal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-yellow-500/20 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-sm font-black font-orbitron uppercase text-yellow-500 tracking-wider">Yatırım Paketi Seçin</h3>
-                <button onclick="closeInvestModal()" class="text-gray-500 hover:text-white text-lg font-bold">&times;</button>
+                <button onclick="closeInvestModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
             </div>
             
             <div class="space-y-4">
+                <!-- Paket 1: 10 Günlük -->
                 <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
                     <div>
                         <h4 class="text-xs font-bold text-white uppercase">Bronz Paket (10 Gün)</h4>
@@ -119,6 +128,7 @@
                     </div>
                     <button onclick="openPaymentModal(10, 0.08)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Seç</button>
                 </div>
+                <!-- Paket 2: 30 Günlük -->
                 <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
                     <div>
                         <h4 class="text-xs font-bold text-white uppercase">Gümüş Paket (30 Gün)</h4>
@@ -130,15 +140,17 @@
         </div>
     </div>
 
-    <div id="paymentModal" class="fixed inset-0 bg-black/90 backdrop-filter blur-md hidden flex items-center justify-center p-4 z-50">
+    <!-- 💳 MODAL 2: TRC20 ADRESİ VE ÖDEME MODALI (Bulanıklık Efektleri Kaldırıldı) -->
+    <div id="paymentModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.05)]">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">TRC20 USDT Ödeme Bilgisi</h3>
-                <button onclick="closePaymentModal()" class="text-gray-500 hover:text-white text-lg font-bold">&times;</button>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
             </div>
 
             <p class="text-xs text-gray-400 mb-4">Lütfen seçtiğiniz pakete ait yatırmak istediğiniz tutarı aşağıdaki TRC20 cüzdan adresine gönderin.</p>
             
+            <!-- Cüzdan Bilgi Kutusu -->
             <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4 select-all">
                 <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">TRC20 USDT Adresiniz</span>
                 <code id="trc20Address" class="text-xs text-yellow-500 font-mono break-all font-bold">TXyourRealTRC20AddressGoesHere123456</code>
@@ -161,7 +173,6 @@
         let USER_NAME = "Değerli Kullanıcı";
         let CURRENT_BALANCE = 0.00;
 
-        // Geçici Seçilen Paket Verileri
         let selectedPlanDays = 0;
         let selectedPlanProfitPercent = 0;
 
@@ -288,19 +299,18 @@
             }, 1200);
         }
 
-        // --- MODAL YÖNETİMLERİ ---
+        // --- MODAL YÖNETİMLERİ (Net Açılış / Kapanış) ---
         function openInvestModal() { document.getElementById('investModal').classList.remove('hidden'); }
         function closeInvestModal() { document.getElementById('investModal').classList.add('hidden'); }
 
         function openPaymentModal(days, profitPercent) {
             selectedPlanDays = days;
             selectedPlanProfitPercent = profitPercent;
-            closeInvestModal(); // İlki kapatılıyor
+            closeInvestModal(); 
             document.getElementById('paymentModal').classList.remove('hidden');
         }
         function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
 
-        // Yatırımı Tamamlama ve Gönderme Fonksiyonu
         async function submitInvestment() {
             const amountInput = document.getElementById('investAmountInput').value;
             const amount = Number(amountInput);
