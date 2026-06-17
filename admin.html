@@ -2,166 +2,235 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoInvest - Admin Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
-        body { background: #0b0f1a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.5rem; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+        body { background: #0b0f12; color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .admin-card { background: rgba(22, 28, 36, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
     </style>
 </head>
-<body class="p-6">
+<body class="p-6 md:p-12">
 
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <h1 class="text-3xl font-black text-yellow-500 font-orbitron italic uppercase">Yönetim Merkezi</h1>
-            <div class="flex gap-3">
-                <input type="password" id="adminPass" placeholder="Şifre" class="bg-gray-800 border border-gray-700 px-4 py-2 rounded-xl outline-none focus:border-yellow-500">
-                <button onclick="loadData()" class="bg-yellow-500 text-black font-bold px-6 py-2 rounded-xl hover:scale-105 transition-all uppercase text-sm">Yenile ↻</button>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-6 border-b border-white/10 gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">CryptoInvest Yönetim Paneli</h1>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">Sistem Durumu: Canlı / Güvenli</p>
+            </div>
+            <button onclick="loadAdminData()" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(243,186,47,0.2)] active:scale-95">
+                Verileri Yenile
+            </button>
+        </div>
+
+        <!-- 1. TABLO: İPTAL VE İADE TALEPLERİ -->
+        <div class="admin-card rounded-2xl p-6 mb-8 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-xl">⚠️</span>
+                <h2 class="font-orbitron font-bold text-md text-orange-500 uppercase tracking-tight">Yatırım İptal ve İade Talepleri</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-500 text-[11px] uppercase tracking-wider">
+                            <th class="pb-3">Kullanıcı (Telegram ID)</th>
+                            <th class="pb-3">Anapara</th>
+                            <th class="pb-3">Vade Planı</th>
+                            <th class="pb-3">TRC20 İade Adresi</th>
+                            <th class="pb-3 text-right">Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cancelRequestsTable" class="divide-y divide-white/5 font-medium">
+                        <!-- JavaScript ile dolacak -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Özet Paneli -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div class="glass-card p-6 border-l-4 border-blue-500">
-                <p class="text-gray-400 text-[10px] font-black uppercase">Aktif Anapara</p>
-                <h2 id="sumCap" class="text-2xl font-orbitron mt-2">$0.00</h2>
+        <!-- 2. TABLO: VADE SONU PARA ÇEKME TALEPLERİ -->
+        <div class="admin-card rounded-2xl p-6 mb-8 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-xl">🚨</span>
+                <h2 class="font-orbitron font-bold text-md text-red-500 uppercase tracking-tight">Vade Sonu Çekim Talepleri</h2>
             </div>
-            <div class="glass-card p-6 border-l-4 border-green-500">
-                <p class="text-gray-400 text-[10px] font-black uppercase">Ödenecek Toplam Kâr</p>
-                <h2 id="sumProf" class="text-2xl font-orbitron mt-2 text-green-400">$0.00</h2>
-            </div>
-            <div class="glass-card p-6 border-l-4 border-red-500">
-                <p class="text-gray-400 text-[10px] font-black uppercase">Bekleyen Çekimler</p>
-                <h2 id="sumWith" class="text-2xl font-orbitron mt-2 text-red-400">$0.00</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-500 text-[11px] uppercase tracking-wider">
+                            <th class="pb-3">Kullanıcı (Telegram ID)</th>
+                            <th class="pb-3">Çekilecek Tutar</th>
+                            <th class="pb-3">Talep Tarihi</th>
+                            <th class="pb-3">TRC20 Çekim Cüzdanı</th>
+                            <th class="pb-3 text-right">Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawRequestsTable" class="divide-y divide-white/5 font-medium">
+                        <!-- JavaScript ile dolacak -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- YATIRIMLAR TABLOSU -->
-        <h3 class="text-xl font-bold mb-4 text-yellow-500 flex items-center gap-2">💰 Aktif Yatırımlar</h3>
-        <div class="glass-card overflow-hidden mb-12">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
-                    <tr>
-                        <th class="p-5">Kullanıcı</th>
-                        <th class="p-5">Kalan Gün</th>
-                        <th class="p-5">Ana Para</th>
-                        <th class="p-5 text-green-400">Net Kâr</th>
-                        <th class="p-5 text-yellow-500">Vade Sonu</th>
-                        <th class="p-5">Durum</th>
-                        <th class="p-5 text-right">İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="investTable" class="divide-y divide-white/5 text-sm"></tbody>
-            </table>
-        </div>
-
-        <!-- ÇEKİM TALEPLERİ TABLOSU -->
-        <h3 class="text-xl font-bold mb-4 text-red-500 flex items-center gap-2">🏦 Para Çekme Talepleri</h3>
-        <div class="glass-card overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-white/5 text-[10px] uppercase text-gray-500 font-black">
-                    <tr>
-                        <th class="p-5">Kullanıcı</th>
-                        <th class="p-5">Miktar</th>
-                        <th class="p-5">Cüzdan Adresi (TRC20)</th>
-                        <th class="p-5">Tarih</th>
-                        <th class="p-5">Durum</th>
-                        <th class="p-5 text-right">İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="withdrawTable" class="divide-y divide-white/5 text-sm"></tbody>
-            </table>
+        <!-- 3. TABLO: YENİ YATIRIM ONAYLARI (BEKLEMEDE OLANLAR) -->
+        <div class="admin-card rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-xl">💰</span>
+                <h2 class="font-orbitron font-bold text-md text-yellow-500 uppercase tracking-tight">Onay Bekleyen Yeni Yatırımlar</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-500 text-[11px] uppercase tracking-wider">
+                            <th class="pb-3">Kullanıcı (Telegram ID / İsim)</th>
+                            <th class="pb-3">Miktar</th>
+                            <th class="pb-3">Plan</th>
+                            <th class="pb-3">Tarih</th>
+                            <th class="pb-3 text-right">Aksiyonlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingInvestmentsTable" class="divide-y divide-white/5 font-medium">
+                        <!-- JavaScript ile dolacak -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        async function loadData() {
-            const password = document.getElementById('adminPass').value;
-            if(!password) return alert("Şifre giriniz.");
+        const API_URL = '/api';
+        const ADMIN_PASSWORD = "1Fr.1806Rf21"; // Sabit şifreniz entegre edildi
 
+        // Sayfa açıldığında verileri otomatik çek
+        window.onload = () => {
+            loadAdminData();
+        };
+
+        async function loadAdminData() {
             try {
-                const res = await fetch('/api/admin/all', {
+                const res = await fetch(`${API_URL}/admin/all`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ password })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD })
                 });
-                if(res.status !== 200) return alert("Yetkisiz!");
+
+                if (!res.ok) {
+                    alert("Veriler çekilemedi! Şifre veya sunucu hatası.");
+                    return;
+                }
+
                 const users = await res.json();
-                renderAll(users);
-            } catch (e) { alert("Hata oluştu."); }
+                
+                let cancelHTML = '';
+                let withdrawHTML = '';
+                let pendingInvestHTML = '';
+
+                users.forEach(user => {
+                    // 1. İptal Taleplerini Filtrele ve Listele
+                    user.investments.forEach(inv => {
+                        if (inv.status === 'İptal Bekliyor') {
+                            cancelHTML += `
+                            <tr class="text-gray-300">
+                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                <td class="py-4 text-orange-400 font-orbitron">$${inv.amount}</td>
+                                <td class="py-4">${inv.planDays} Gün</td>
+                                <td class="py-4 font-mono text-xs text-yellow-500 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${inv.returnWallet || 'Girilmemiş!'}</td>
+                                <td class="py-4 text-right">
+                                    <button onclick="approveCancel('${user.telegramId}', '${inv._id}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">İadeyi Onayla</button>
+                                </td>
+                            </tr>`;
+                        }
+                        
+                        // 3. Onay Bekleyen İlk Yatırımları Filtrele
+                        if (inv.status === 'Onay Bekliyor') {
+                            pendingInvestHTML += `
+                            <tr class="text-gray-300">
+                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                <td class="py-4 text-green-400 font-orbitron">$${inv.amount}</td>
+                                <td class="py-4">${inv.planDays} Gün</td>
+                                <td class="py-4 text-xs text-gray-500">${new Date(inv.createdAt).toLocaleString('tr-TR')}</td>
+                                <td class="py-4 text-right space-x-2">
+                                    <button onclick="approveInvestment('${user.telegramId}', '${inv._id}')" class="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Aktif Et</button>
+                                    <button onclick="deleteInvestment('${user.telegramId}', '${inv._id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Sil</button>
+                                </td>
+                            </tr>`;
+                        }
+                    });
+
+                    // 2. Çekim Taleplerini Filtrele ve Listele
+                    user.withdrawals.forEach(wit => {
+                        if (wit.status === 'Beklemede') {
+                            withdrawHTML += `
+                            <tr class="text-gray-300">
+                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                <td class="py-4 text-red-400 font-orbitron">$${wit.amount}</td>
+                                <td class="py-4 text-xs text-gray-500">${new Date(wit.date).toLocaleString('tr-TR')}</td>
+                                <td class="py-4 font-mono text-xs text-green-400 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${wit.wallet}</td>
+                                <td class="py-4 text-right">
+                                    <button onclick="approveWithdraw('${user.telegramId}', '${wit._id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">Gönderimi Onayla</button>
+                                </td>
+                            </tr>`;
+                        }
+                    });
+                });
+
+                // Tablolar boş ise uyarı yazısı koy
+                document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
+                document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
+                document.getElementById('pendingInvestmentsTable').innerHTML = pendingInvestHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Onay Bekleyen Yatırım Yok</td></tr>`;
+
+            } catch (e) {
+                console.error(e);
+                alert("Sunucu bağlantı hatası.");
+            }
         }
 
-        function renderAll(users) {
-            const iTable = document.getElementById('investTable');
-            const wTable = document.getElementById('withdrawTable');
-            iTable.innerHTML = ''; wTable.innerHTML = '';
+        // --- AKSİYON FONKSİYONLARI ---
 
-            let cap = 0, prof = 0, withD = 0;
-
-            users.forEach(user => {
-                // Yatırımları İşle
-                user.investments.forEach(inv => {
-                    const created = new Date(inv.createdAt);
-                    const diff = Math.ceil(inv.planDays - (new Date() - created) / (1000*60*60*24));
-                    const remaining = inv.status === 'Aktif' ? (diff > 0 ? diff : 'Doldu') : '-';
-                    
-                    if(inv.status === 'Aktif') { cap += inv.amount; prof += inv.totalProfit; }
-
-                    iTable.innerHTML += `
-                        <tr class="hover:bg-white/5">
-                            <td class="p-5 font-bold">${user.telegramId}</td>
-                            <td class="p-5 font-black text-blue-400">${remaining} ${typeof remaining === 'number' ? 'Gün' : ''}</td>
-                            <td class="p-5">$${inv.amount.toFixed(2)}</td>
-                            <td class="p-5 text-green-400">+$${inv.totalProfit.toFixed(2)}</td>
-                            <td class="p-5 text-yellow-500 font-black">$${(inv.amount + inv.totalProfit).toFixed(2)}</td>
-                            <td class="p-5"><span class="px-2 py-1 rounded text-[10px] font-black ${inv.status === 'Aktif' ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'}">${inv.status}</span></td>
-                            <td class="p-5 text-right">
-                                ${inv.status === 'Onay Bekliyor' ? `<button onclick="approveInvest('${user.telegramId}','${inv._id}')" class="bg-green-600 px-3 py-1 rounded-lg text-xs font-bold">ONAYLA</button>` : `<button onclick="deleteInvest('${user.telegramId}','${inv._id}')" class="text-gray-600 text-xs">SİL</button>`}
-                            </td>
-                        </tr>`;
-                });
-
-                // Çekimleri İşle
-                user.withdrawals.forEach(w => {
-                    if(w.status === 'Beklemede') withD += w.amount;
-                    wTable.innerHTML += `
-                        <tr class="hover:bg-white/5">
-                            <td class="p-5 font-bold">${user.telegramId}</td>
-                            <td class="p-5 font-black text-red-400">$${w.amount.toFixed(2)}</td>
-                            <td class="p-5 font-mono text-xs text-gray-400">${w.wallet}</td>
-                            <td class="p-5 text-xs">${new Date(w.date).toLocaleDateString()}</td>
-                            <td class="p-5"><span class="text-[10px] font-black uppercase ${w.status === 'Beklemede' ? 'text-yellow-500' : 'text-green-500'}">${w.status}</span></td>
-                            <td class="p-5 text-right">
-                                ${w.status === 'Beklemede' ? `<button onclick="approveWithdraw('${user.telegramId}','${w._id}')" class="bg-red-600 px-3 py-1 rounded-lg text-xs font-bold italic">ÖDENDİ İŞARETLE</button>` : '✅'}
-                            </td>
-                        </tr>`;
-                });
+        // 1. Yeni Yatırım Onaylama (Aktif Etme)
+        async function approveInvestment(telegramId, investId) {
+            if(!confirm("Bu yatırımı onaylayıp aktifleştirmek istiyor musunuz?")) return;
+            const res = await fetch(`${API_URL}/admin/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
             });
-
-            document.getElementById('sumCap').innerText = '$' + cap.toFixed(2);
-            document.getElementById('sumProf').innerText = '$' + prof.toFixed(2);
-            document.getElementById('sumWith').innerText = '$' + withD.toFixed(2);
+            if(res.ok) { alert("Yatırım aktif edildi, kullanıcıya bot bildirimi gönderildi."); loadAdminData(); }
         }
 
-        async function approveInvest(telegramId, investId) {
-            const password = document.getElementById('adminPass').value;
-            await fetch('/api/admin/approve', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, investId }) });
-            loadData();
+        // 2. İptal Talebini Onaylama
+        async function approveCancel(telegramId, investId) {
+            if(!confirm("İadeyi cüzdana gönderdiyseniz onaylayın. Bu işlem yatırımı 'İptal Edildi' yapacaktır.")) return;
+            const res = await fetch(`${API_URL}/admin/approve-cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
+            });
+            if(res.ok) { alert("İptal talebi başarıyla onaylandı!"); loadAdminData(); }
         }
 
+        // 3. Vade Sonu Çekim Talebini Onaylama
         async function approveWithdraw(telegramId, withdrawId) {
-            const password = document.getElementById('adminPass').value;
-            await fetch('/api/admin/approve-withdraw', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, withdrawId }) });
-            loadData();
+            if(!confirm("Ödemeyi kullanıcı adresine transfer ettiyseniz onaylayın. Durum 'Tamamlandı' olacaktır.")) return;
+            const res = await fetch(`${API_URL}/admin/approve-withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, withdrawId })
+            });
+            if(res.ok) { alert("Çekim talebi tamamlandı olarak işaretlendi!"); loadAdminData(); }
         }
 
-        async function deleteInvest(telegramId, investId) {
-            if(!confirm("Kaydı silmek istediğine emin misin?")) return;
-            const password = document.getElementById('adminPass').value;
-            await fetch('/api/admin/delete-invest', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password, telegramId, investId }) });
-            loadData();
+        // 4. Yatırım Talebini Reddetme / Silme
+        async function deleteInvestment(telegramId, investId) {
+            if(!confirm("Bu yatırım kaydını kalıcı olarak silmek istiyor musunuz?")) return;
+            const res = await fetch(`${API_URL}/admin/delete-invest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
+            });
+            if(res.ok) { alert("Yatırım kaydı silindi."); loadAdminData(); }
         }
     </script>
 </body>
