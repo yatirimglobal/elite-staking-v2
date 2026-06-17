@@ -29,7 +29,6 @@
 </head>
 <body class="p-4 md:p-8 max-w-5xl mx-auto">
 
-    <!-- HEADER -->
     <div class="flex justify-between items-center mb-8 pb-4 border-b border-white/5">
         <div>
             <h1 class="text-xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking</h1>
@@ -41,7 +40,6 @@
         </div>
     </div>
 
-    <!-- ÜST SEÇENEKLER / MODAL TETİKLEYİCİLER -->
     <div class="grid grid-cols-2 gap-4 mb-6">
         <button onclick="openInvestModal()" class="glass-card hover:bg-yellow-500/10 text-yellow-500 font-bold py-4 rounded-xl text-xs uppercase tracking-wider transition-all border border-yellow-500/20 active:scale-95 text-center">
             🚀 Yatırım Paketleri (Staking)
@@ -51,10 +49,8 @@
         </button>
     </div>
 
-    <!-- MAIN GRID -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        <!-- 🎲 BÖLÜM 1: ŞANSLI KUTU OYUN ALANI -->
         <div class="glass-card rounded-2xl p-6 border border-purple-500/20 shadow-[0_0_30px_rgba(147,51,234,0.05)] flex flex-col items-center text-center">
             <span class="text-xs font-black tracking-widest uppercase text-purple-400 font-orbitron mb-2">🎁 Şanslı Kutu (Lucky Box)</span>
             <div class="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-full text-[11px] font-bold mb-4 border border-purple-500/20">
@@ -77,7 +73,6 @@
             </button>
         </div>
 
-        <!-- 💼 BÖLÜM 2: AKTİF YATIRIMLARINIZ (STAKING) -->
         <div class="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
             <div>
                 <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-4">💰 Aktif Yatırımlarınız</span>
@@ -89,7 +84,6 @@
 
     </div>
 
-    <!-- 📜 BÖLÜM 3: OYUN GEÇMİŞİ -->
     <div class="glass-card rounded-2xl p-6 mt-6 border border-white/5">
         <span class="text-xs font-black tracking-widest uppercase text-gray-400 font-orbitron block mb-4">🕒 Kutu Açma Geçmişiniz</span>
         <div class="overflow-x-auto">
@@ -110,8 +104,7 @@
         </div>
     </div>
 
-    <!-- 📦 MODAL 1: YATIRIM PAKETİ SATIN ALMA MODALI -->
-    <div id="investModal" class="fixed inset-0 bg-black/80 backdrop-filter blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div id="investModal" class="fixed inset-0 bg-black/85 backdrop-filter blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-yellow-500/20 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-sm font-black font-orbitron uppercase text-yellow-500 tracking-wider">Yatırım Paketi Seçin</h3>
@@ -119,31 +112,46 @@
             </div>
             
             <div class="space-y-4">
-                <!-- Paket 1 -->
                 <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
                     <div>
-                        <h4 class="text-xs font-bold text-white uppercase">Gümüş Paket (7 Gün)</h4>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Günlük Net Getiri: %1.5</p>
+                        <h4 class="text-xs font-bold text-white uppercase">Bronz Paket (10 Gün)</h4>
+                        <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Net Kazanç: %8</p>
                     </div>
-                    <button onclick="processInvestment(7, 0.105)" class="bg-yellow-500 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase">Seç</button>
+                    <button onclick="openPaymentModal(10, 0.08)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Seç</button>
                 </div>
-                <!-- Paket 2 -->
                 <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
                     <div>
-                        <h4 class="text-xs font-bold text-white uppercase">Altın Paket (30 Gün)</h4>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Günlük Net Getiri: %2.2</p>
+                        <h4 class="text-xs font-bold text-white uppercase">Gümüş Paket (30 Gün)</h4>
+                        <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Net Kazanç: %20</p>
                     </div>
-                    <button onclick="processInvestment(30, 0.66)" class="bg-yellow-500 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase">Seç</button>
-                </div>
-                <!-- Paket 3 -->
-                <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
-                    <div>
-                        <h4 class="text-xs font-bold text-white uppercase">VIP Elmas Paket (90 Gün)</h4>
-                        <p class="text-[10px] text-gray-400 mt-0.5">Günlük Net Getiri: %3.5</p>
-                    </div>
-                    <button onclick="processInvestment(90, 3.15)" class="bg-yellow-500 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase">Seç</button>
+                    <button onclick="openPaymentModal(30, 0.20)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Seç</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="fixed inset-0 bg-black/90 backdrop-filter blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.05)]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">TRC20 USDT Ödeme Bilgisi</h3>
+                <button onclick="closePaymentModal()" class="text-gray-500 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            <p class="text-xs text-gray-400 mb-4">Lütfen seçtiğiniz pakete ait yatırmak istediğiniz tutarı aşağıdaki TRC20 cüzdan adresine gönderin.</p>
+            
+            <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4 select-all">
+                <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">TRC20 USDT Adresiniz</span>
+                <code id="trc20Address" class="text-xs text-yellow-500 font-mono break-all font-bold">TXyourRealTRC20AddressGoesHere123456</code>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-[10px] uppercase text-gray-400 mb-1 font-semibold">Yatırılacak Tutar ($)</label>
+                <input type="number" id="investAmountInput" value="100" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold font-orbitron text-white focus:outline-none focus:border-green-500/5">
+            </div>
+
+            <button onclick="submitInvestment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                Ödemeyi Yaptım, Bildir
+            </button>
         </div>
     </div>
 
@@ -152,6 +160,10 @@
         let TELEGRAM_ID = "1694656329"; 
         let USER_NAME = "Değerli Kullanıcı";
         let CURRENT_BALANCE = 0.00;
+
+        // Geçici Seçilen Paket Verileri
+        let selectedPlanDays = 0;
+        let selectedPlanProfitPercent = 0;
 
         window.onload = async () => {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -185,14 +197,12 @@
             }
         }
 
-        // Bakiye ve Havuz Hesaplamaları
         function calculateBalance(user) {
-            let initialBonus = 20.00; // Başlangıçta sistemi denemesi için verilen sanal bakiye
+            let initialBonus = 20.00; 
             let boxExpenses = 0;
             let boxEarnings = 0;
 
             if (user.luckyBoxHistory) {
-                // Kutu geçmişine göre harcanan giriş ücretleri ve kazançlar
                 boxExpenses = user.luckyBoxHistory.length * 5.00;
                 user.luckyBoxHistory.forEach(l => boxEarnings += (Number(l.wonAmount) || 0));
             }
@@ -203,9 +213,8 @@
             document.getElementById('userBalance').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
         }
 
-        // 🎲 KASANIN KAZANACAĞI ŞANSLI KUTU FONKSİYONU
+        // 🎲 ŞANSLI KUTU FONKSİYONU
         async function openLuckyBox() {
-            // Bakiye Yetersiz Kontrolü
             if (CURRENT_BALANCE < 5.00) {
                 alert("Bakiyeniz yetersiz! Kutu açmak için en az $5.00 bakiyeniz olmalıdır.");
                 return;
@@ -222,21 +231,16 @@
             box.innerText = "🎁";
             resultDiv.classList.add('hidden');
 
-            // 🧮 KASA KAZANÇ ALGORİTMASI (Uzun vadede matematiksel olarak kasa %100 karlıdır)
             const rand = Math.random() * 100;
             let selectedReward = { type: 'LOSE', amount: 0.00 };
 
             if (rand < 55) {
-                // %55 İhtimalle Amorti (Kasa $4.00 net kar elde eder)
                 selectedReward = { type: 'AMORTI', amount: 1.00 };
             } else if (rand < 88) {
-                // %33 İhtimalle Tamamen Boş/Kayıp (Kasa $5.00 net kar elde eder)
                 selectedReward = { type: 'LOSE', amount: 0.00 };
             } else if (rand < 99) {
-                // %11 İhtimalle Orta Ödül
                 selectedReward = { type: 'WIN', amount: 10.00 };
             } else {
-                // %1 İhtimalle Büyük Ödül
                 selectedReward = { type: 'JACKPOT', amount: 50.00 };
             }
 
@@ -284,16 +288,29 @@
             }, 1200);
         }
 
-        // Modalları Açıp Kapatma Alanları
+        // --- MODAL YÖNETİMLERİ ---
         function openInvestModal() { document.getElementById('investModal').classList.remove('hidden'); }
         function closeInvestModal() { document.getElementById('investModal').classList.add('hidden'); }
 
-        // Paket Satın Almayı Tetikleyen Fonksiyon
-        async function processInvestment(days, profitPercent) {
-            const amount = prompt(`Seçilen Paket: ${days} Günlük Staking Planı\nYatırmak istediğiniz tutar ($):`, "100");
-            if (!amount || isNaN(amount) || Number(amount) <= 0) return;
+        function openPaymentModal(days, profitPercent) {
+            selectedPlanDays = days;
+            selectedPlanProfitPercent = profitPercent;
+            closeInvestModal(); // İlki kapatılıyor
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+        function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
 
-            const profit = Number(amount) * profitPercent;
+        // Yatırımı Tamamlama ve Gönderme Fonksiyonu
+        async function submitInvestment() {
+            const amountInput = document.getElementById('investAmountInput').value;
+            const amount = Number(amountInput);
+
+            if (!amount || isNaN(amount) || amount <= 0) {
+                alert("Lütfen geçerli bir yatırım miktarı giriniz.");
+                return;
+            }
+
+            const totalProfit = amount * selectedPlanProfitPercent;
 
             try {
                 const res = await fetch(`${API_URL}/invest`, {
@@ -301,21 +318,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         telegramId: TELEGRAM_ID,
-                        planDays: days,
-                        amount: Number(amount),
-                        profit: profit
+                        planDays: selectedPlanDays,
+                        amount: amount,
+                        profit: totalProfit
                     })
                 });
 
                 if (res.ok) {
-                    alert("💰 Yatırım talebiniz başarıyla oluşturuldu ve admine bildirildi! Onay bekliyor.");
-                    closeInvestModal();
+                    alert("💰 Ödeme bildiriminiz başarıyla oluşturuldu ve admine iletildi! Kontroller sonrasında aktif edilecektir.");
+                    closePaymentModal();
                     await syncUser();
                 } else {
-                    alert("Yatırım talebi iletilemedi.");
+                    alert("Yatırım bildirimi gönderilemedi.");
                 }
             } catch (e) {
-                alert("Bağlantı hatası.");
+                alert("Bağlantı hatası yaşandı.");
             }
         }
 
@@ -378,7 +395,7 @@
                     </div>
                     <div class="text-right">
                         <span class="font-orbitron text-yellow-500 font-black block">$${inv.amount}</span>
-                        <span class="text-[9px] text-gray-500">Hedef: +$${inv.totalProfit}</span>
+                        <span class="text-[9px] text-gray-500">Hedef Kazanç: +$${inv.totalProfit}</span>
                     </div>
                 </div>`;
             });
