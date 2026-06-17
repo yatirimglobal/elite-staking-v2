@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <!-- 📊 ÜST İSTATİSTİK KARTLARI (YENİ EKLENDİ) -->
+        <!-- 📊 ÜST İSTATİSTİK KARTLARI -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <!-- Toplam Anapara Kartı -->
             <div class="admin-card rounded-2xl p-6 border-l-4 border-yellow-500 shadow-xl">
@@ -59,14 +59,14 @@
                 <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Sistemdeki aktif yatırımların toplamı</p>
             </div>
 
-            <!-- Ödenecek Toplam Kar Kartı -->
+            <!-- Ödenecek Toplam Kar Kartı (totalProfit olarak düzeltildi) -->
             <div class="admin-card rounded-2xl p-6 border-l-4 border-green-500 shadow-xl">
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Ödenecek Biriken Kâr</span>
+                    <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Ödenecek Toplam Kâr</span>
                     <span class="text-xl">📈</span>
                 </div>
                 <h3 id="statTotalProfit" class="text-2xl font-black font-orbitron text-green-400">$0.00</h3>
-                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Kullanıcıların anlık biriken kâr toplamı</p>
+                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Aktif paketlerin toplam net kârı</p>
             </div>
 
             <!-- Aktif Çekim Talepleri Kartı -->
@@ -218,28 +218,26 @@
             }
         }
 
-        // Hem tabloları çizen hem de üst kartlardaki istatistikleri hesaplayan fonksiyon
         function renderTablesAndStats(users) {
             let cancelHTML = '';
             let withdrawHTML = '';
             let pendingInvestHTML = '';
 
-            // İstatistik sayaçları
             let totalInvestSum = 0;
-            let totalProfitSum = 0;
+            let totalProfitSum = 0; // Doğru verileri buraya toplayacağız
             let totalWithdrawSum = 0;
 
             users.forEach(user => {
-                // Yatırımları inceleme ve hesaplama
                 if (user.investments && user.investments.length > 0) {
                     user.investments.forEach(inv => {
                         const amount = Number(inv.amount) || 0;
-                        const profit = Number(inv.earnedProfit) || 0;
+                        // HATA DÜZELTİLDİ: server.js şemasındaki gerçek alan totalProfit'tir
+                        const profit = Number(inv.totalProfit) || 0; 
 
-                        // Üst İstatistik Hesapları: Sadece 'Aktif' paketlerin anaparasını ve kârını topluyoruz
+                        // Sadece 'Aktif' paketlerin anaparasını ve gerçek kârını üst kartlara dahil et
                         if (inv.status === 'Aktif') {
                             totalInvestSum += amount;
-                            totalProfitSum += profit;
+                            totalProfitSum += profit; 
                         }
 
                         if (inv.status === 'İptal Bekliyor') {
@@ -272,13 +270,12 @@
                     });
                 }
 
-                // Çekim taleplerini inceleme ve hesaplama
                 if (user.withdrawals && user.withdrawals.length > 0) {
                     user.withdrawals.forEach(wit => {
                         const witAmount = Number(wit.amount) || 0;
 
                         if (wit.status === 'Beklemede') {
-                            totalWithdrawSum += witAmount; // Üst İstatistik: Bekleyen çekimleri topluyoruz
+                            totalWithdrawSum += witAmount;
 
                             withdrawHTML += `
                             <tr class="text-gray-300">
@@ -295,12 +292,11 @@
                 }
             });
 
-            // Üst İstatistik Kartlarını Ekrana Yazma
+            // Değerleri kartlara kusursuz şekilde basıyoruz
             document.getElementById('statTotalInvest').innerText = `$${totalInvestSum.toFixed(2)}`;
             document.getElementById('statTotalProfit').innerText = `$${totalProfitSum.toFixed(2)}`;
             document.getElementById('statTotalWithdraw').innerText = `$${totalWithdrawSum.toFixed(2)}`;
 
-            // Tabloları Yazma
             document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
             document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
             document.getElementById('pendingInvestmentsTable').innerHTML = pendingInvestHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Onay Bekleyen Yatırım Yok</td></tr>`;
