@@ -101,9 +101,8 @@
 
     <script>
         const API_URL = '/api';
-        const ADMIN_PASSWORD = "1Fr.1806Rf21"; // Sabit şifreniz entegre edildi
+        const ADMIN_PASSWORD = "1Fr.1806Rf21"; 
 
-        // Sayfa açıldığında verileri otomatik çek
         window.onload = () => {
             loadAdminData();
         };
@@ -128,55 +127,64 @@
                 let pendingInvestHTML = '';
 
                 users.forEach(user => {
-                    // 1. İptal Taleplerini Filtrele ve Listele
-                    user.investments.forEach(inv => {
-                        if (inv.status === 'İptal Bekliyor') {
-                            cancelHTML += `
-                            <tr class="text-gray-300">
-                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-orange-400 font-orbitron">$${inv.amount}</td>
-                                <td class="py-4">${inv.planDays} Gün</td>
-                                <td class="py-4 font-mono text-xs text-yellow-500 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${inv.returnWallet || 'Girilmemiş!'}</td>
-                                <td class="py-4 text-right">
-                                    <button onclick="approveCancel('${user.telegramId}', '${inv._id}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">İadeyi Onayla</button>
-                                </td>
-                            </tr>`;
-                        }
-                        
-                        // 3. Onay Bekleyen İlk Yatırımları Filtrele
-                        if (inv.status === 'Onay Bekliyor') {
-                            pendingInvestHTML += `
-                            <tr class="text-gray-300">
-                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-green-400 font-orbitron">$${inv.amount}</td>
-                                <td class="py-4">${inv.planDays} Gün</td>
-                                <td class="py-4 text-xs text-gray-500">${new Date(inv.createdAt).toLocaleString('tr-TR')}</td>
-                                <td class="py-4 text-right space-x-2">
-                                    <button onclick="approveInvestment('${user.telegramId}', '${inv._id}')" class="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Aktif Et</button>
-                                    <button onclick="deleteInvestment('${user.telegramId}', '${inv._id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Sil</button>
-                                </td>
-                            </tr>`;
-                        }
-                    });
+                    // Kullanıcının yatırımlarını dönüyoruz
+                    if (user.investments && user.investments.length > 0) {
+                        user.investments.forEach(inv => {
+                            
+                            // 1. İPTAL TALEPLERİNİ YAKALAMA VE CÜZDANI YAZDIRMA (DÜZELTİLDİ)
+                            if (inv.status === 'İptal Bekliyor') {
+                                const cüzdanAdresi = inv.returnWallet || inv.wallet || "Adres Alınamadı";
+                                
+                                cancelHTML += `
+                                <tr class="text-gray-300">
+                                    <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                    <td class="py-4 text-orange-400 font-orbitron">$${inv.amount}</td>
+                                    <td class="py-4">${inv.planDays} Gün</td>
+                                    <td class="py-4 font-mono text-xs text-yellow-500 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">
+                                        ${cüzdanAdresi}
+                                    </td>
+                                    <td class="py-4 text-right">
+                                        <button onclick="approveCancel('${user.telegramId}', '${inv._id}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">İadeyi Onayla</button>
+                                    </td>
+                                </tr>`;
+                            }
+                            
+                            // 3. ONAY BEKLEYEN YENİ YATIRIMLAR
+                            if (inv.status === 'Onay Bekliyor') {
+                                pendingInvestHTML += `
+                                <tr class="text-gray-300">
+                                    <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                    <td class="py-4 text-green-400 font-orbitron">$${inv.amount}</td>
+                                    <td class="py-4">${inv.planDays} Gün</td>
+                                    <td class="py-4 text-xs text-gray-500">${new Date(inv.createdAt).toLocaleString('tr-TR')}</td>
+                                    <td class="py-4 text-right space-x-2">
+                                        <button onclick="approveInvestment('${user.telegramId}', '${inv._id}')" class="bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Aktif Et</button>
+                                        <button onclick="deleteInvestment('${user.telegramId}', '${inv._id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase transition-all active:scale-95">Sil</button>
+                                    </td>
+                                </tr>`;
+                            }
+                        });
+                    }
 
-                    // 2. Çekim Taleplerini Filtrele ve Listele
-                    user.withdrawals.forEach(wit => {
-                        if (wit.status === 'Beklemede') {
-                            withdrawHTML += `
-                            <tr class="text-gray-300">
-                                <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-red-400 font-orbitron">$${wit.amount}</td>
-                                <td class="py-4 text-xs text-gray-500">${new Date(wit.date).toLocaleString('tr-TR')}</td>
-                                <td class="py-4 font-mono text-xs text-green-400 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${wit.wallet}</td>
-                                <td class="py-4 text-right">
-                                    <button onclick="approveWithdraw('${user.telegramId}', '${wit._id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">Gönderimi Onayla</button>
-                                </td>
-                            </tr>`;
-                        }
-                    });
+                    // 2. ÇEKİM TALEPLERİNİ FİLTRELE VE LİSTELE
+                    if (user.withdrawals && user.withdrawals.length > 0) {
+                        user.withdrawals.forEach(wit => {
+                            if (wit.status === 'Beklemede') {
+                                withdrawHTML += `
+                                <tr class="text-gray-300">
+                                    <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
+                                    <td class="py-4 text-red-400 font-orbitron">$${wit.amount}</td>
+                                    <td class="py-4 text-xs text-gray-500">${new Date(wit.date).toLocaleString('tr-TR')}</td>
+                                    <td class="py-4 font-mono text-xs text-green-400 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${wit.wallet}</td>
+                                    <td class="py-4 text-right">
+                                        <button onclick="approveWithdraw('${user.telegramId}', '${wit._id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wide transition-all active:scale-95">Gönderimi Onayla</button>
+                                    </td>
+                                </tr>`;
+                            }
+                        });
+                    }
                 });
 
-                // Tablolar boş ise uyarı yazısı koy
                 document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
                 document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
                 document.getElementById('pendingInvestmentsTable').innerHTML = pendingInvestHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Onay Bekleyen Yatırım Yok</td></tr>`;
@@ -189,7 +197,6 @@
 
         // --- AKSİYON FONKSİYONLARI ---
 
-        // 1. Yeni Yatırım Onaylama (Aktif Etme)
         async function approveInvestment(telegramId, investId) {
             if(!confirm("Bu yatırımı onaylayıp aktifleştirmek istiyor musunuz?")) return;
             const res = await fetch(`${API_URL}/admin/approve`, {
@@ -200,7 +207,6 @@
             if(res.ok) { alert("Yatırım aktif edildi, kullanıcıya bot bildirimi gönderildi."); loadAdminData(); }
         }
 
-        // 2. İptal Talebini Onaylama
         async function approveCancel(telegramId, investId) {
             if(!confirm("İadeyi cüzdana gönderdiyseniz onaylayın. Bu işlem yatırımı 'İptal Edildi' yapacaktır.")) return;
             const res = await fetch(`${API_URL}/admin/approve-cancel`, {
@@ -211,7 +217,6 @@
             if(res.ok) { alert("İptal talebi başarıyla onaylandı!"); loadAdminData(); }
         }
 
-        // 3. Vade Sonu Çekim Talebini Onaylama
         async function approveWithdraw(telegramId, withdrawId) {
             if(!confirm("Ödemeyi kullanıcı adresine transfer ettiyseniz onaylayın. Durum 'Tamamlandı' olacaktır.")) return;
             const res = await fetch(`${API_URL}/admin/approve-withdraw`, {
@@ -222,7 +227,6 @@
             if(res.ok) { alert("Çekim talebi tamamlandı olarak işaretlendi!"); loadAdminData(); }
         }
 
-        // 4. Yatırım Talebini Reddetme / Silme
         async function deleteInvestment(telegramId, investId) {
             if(!confirm("Bu yatırım kaydını kalıcı olarak silmek istiyor musunuz?")) return;
             const res = await fetch(`${API_URL}/admin/delete-invest`, {
