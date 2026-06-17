@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoInvest - Admin Control Panel</title>
+    <title>EliteStaking - Admin Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
@@ -15,7 +15,7 @@
 <body class="p-6 md:p-12">
 
     <!-- 🔒 GİRİŞ EKRANI (LOGIN PANEL) -->
-    <div id="loginGate" class="fixed inset-0 bg(#0b0f12) z-[999] flex items-center justify-center p-6" style="background-color: #0b0f12;">
+    <div id="loginGate" class="fixed inset-0 bg-[#0b0f12] z-[999] flex items-center justify-center p-6">
         <div class="admin-card w-full max-w-md p-8 rounded-2xl shadow-2xl border border-yellow-500/10 text-center">
             <span class="text-4xl mb-4 block">🔐</span>
             <h2 class="font-orbitron font-black text-lg text-yellow-500 uppercase tracking-wider italic mb-2">Yönetici Girişi</h2>
@@ -29,12 +29,12 @@
         </div>
     </div>
 
-    <!-- 🖥️ ANA ADMİN PANELİİ (GİRİŞ YAPILANA KADAR GİZLİ) -->
+    <!-- 🖥️ ANA ADMİN PANELİ (GİRİŞ YAPILANA KADAR GİZLİ) -->
     <div id="adminContent" class="max-w-7xl mx-auto hidden">
         <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 pb-6 border-b border-white/10 gap-4">
             <div>
-                <h1 class="text-2xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">CryptoInvest Yönetim Paneli</h1>
+                <h1 class="text-2xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking Yönetim Paneli</h1>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">Sistem Durumu: Canlı / Güvenli</p>
             </div>
             <div class="flex gap-2">
@@ -44,6 +44,39 @@
                 <button onclick="adminLogout()" class="bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/20 font-black px-4 py-3 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95">
                     Çıkış Yap
                 </button>
+            </div>
+        </div>
+
+        <!-- 📊 ÜST İSTATİSTİK KARTLARI (YENİ EKLENDİ) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <!-- Toplam Anapara Kartı -->
+            <div class="admin-card rounded-2xl p-6 border-l-4 border-yellow-500 shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Toplam Aktif Anapara</span>
+                    <span class="text-xl">💰</span>
+                </div>
+                <h3 id="statTotalInvest" class="text-2xl font-black font-orbitron text-yellow-500">$0.00</h3>
+                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Sistemdeki aktif yatırımların toplamı</p>
+            </div>
+
+            <!-- Ödenecek Toplam Kar Kartı -->
+            <div class="admin-card rounded-2xl p-6 border-l-4 border-green-500 shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Ödenecek Biriken Kâr</span>
+                    <span class="text-xl">📈</span>
+                </div>
+                <h3 id="statTotalProfit" class="text-2xl font-black font-orbitron text-green-400">$0.00</h3>
+                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Kullanıcıların anlık biriken kâr toplamı</p>
+            </div>
+
+            <!-- Aktif Çekim Talepleri Kartı -->
+            <div class="admin-card rounded-2xl p-6 border-l-4 border-red-500 shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Bekleyen Çekim Talepleri</span>
+                    <span class="text-xl">🚨</span>
+                </div>
+                <h3 id="statTotalWithdraw" class="text-2xl font-black font-orbitron text-red-400">$0.00</h3>
+                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-tight">Onay bekleyen toplam çekim miktarı</p>
             </div>
         </div>
 
@@ -122,9 +155,8 @@
 
     <script>
         const API_URL = '/api';
-        let ADMIN_PASSWORD = ""; // Kullanıcı girdikçe dolacak
+        let ADMIN_PASSWORD = ""; 
 
-        // Sayfa açıldığında daha önce giriş yapılmış mı kontrol et (Session kalıcılığı)
         window.onload = () => {
             const savedPass = sessionStorage.getItem('admin_session_pass');
             if (savedPass) {
@@ -135,17 +167,13 @@
             }
         };
 
-        // Giriş Buton Kontrolü
         function checkAdminLogin() {
             const inputPass = document.getElementById('gatePassword').value;
             if (!inputPass) return alert("Şifre boş bırakılamaz!");
-            
-            // Geçici olarak şifreyi atayıp API testi yapıyoruz
             ADMIN_PASSWORD = inputPass;
             testAndLoadData();
         }
 
-        // Şifrenin doğruluğunu API ile test eden fonksiyon
         async function testAndLoadData() {
             try {
                 const res = await fetch(`${API_URL}/admin/all`, {
@@ -155,13 +183,11 @@
                 });
 
                 if (res.ok) {
-                    // Şifre doğruysa session'a kaydet ve paneli aç
                     sessionStorage.setItem('admin_session_pass', ADMIN_PASSWORD);
                     document.getElementById('loginGate').classList.add('hidden');
                     document.getElementById('adminContent').classList.remove('hidden');
-                    
                     const users = await res.json();
-                    renderTables(users);
+                    renderTablesAndStats(users);
                 } else {
                     alert("❌ Hatalı Şifre! Giriş engellendi.");
                     ADMIN_PASSWORD = "";
@@ -171,7 +197,6 @@
             }
         }
 
-        // Klasik Veri Yenileme Butonu İşlevi
         async function loadAdminData() {
             try {
                 const res = await fetch(`${API_URL}/admin/all`, {
@@ -187,27 +212,42 @@
                 }
 
                 const users = await res.json();
-                renderTables(users);
+                renderTablesAndStats(users);
             } catch (e) {
                 alert("Veriler yenilenirken hata oluştu.");
             }
         }
 
-        // Tablo Çizim Mantığı
-        function renderTables(users) {
+        // Hem tabloları çizen hem de üst kartlardaki istatistikleri hesaplayan fonksiyon
+        function renderTablesAndStats(users) {
             let cancelHTML = '';
             let withdrawHTML = '';
             let pendingInvestHTML = '';
 
+            // İstatistik sayaçları
+            let totalInvestSum = 0;
+            let totalProfitSum = 0;
+            let totalWithdrawSum = 0;
+
             users.forEach(user => {
+                // Yatırımları inceleme ve hesaplama
                 if (user.investments && user.investments.length > 0) {
                     user.investments.forEach(inv => {
+                        const amount = Number(inv.amount) || 0;
+                        const profit = Number(inv.earnedProfit) || 0;
+
+                        // Üst İstatistik Hesapları: Sadece 'Aktif' paketlerin anaparasını ve kârını topluyoruz
+                        if (inv.status === 'Aktif') {
+                            totalInvestSum += amount;
+                            totalProfitSum += profit;
+                        }
+
                         if (inv.status === 'İptal Bekliyor') {
                             const cüzdanAdresi = inv.returnWallet || inv.wallet || "Adres Alınamadı";
                             cancelHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-orange-400 font-orbitron">$${inv.amount}</td>
+                                <td class="py-4 text-orange-400 font-orbitron">$${amount}</td>
                                 <td class="py-4">${inv.planDays} Gün</td>
                                 <td class="py-4 font-mono text-xs text-yellow-500 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${cüzdanAdresi}</td>
                                 <td class="py-4 text-right">
@@ -215,11 +255,12 @@
                                 </td>
                             </tr>`;
                         }
+                        
                         if (inv.status === 'Onay Bekliyor') {
                             pendingInvestHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-green-400 font-orbitron">$${inv.amount}</td>
+                                <td class="py-4 text-green-400 font-orbitron">$${amount}</td>
                                 <td class="py-4">${inv.planDays} Gün</td>
                                 <td class="py-4 text-xs text-gray-500">${new Date(inv.createdAt).toLocaleString('tr-TR')}</td>
                                 <td class="py-4 text-right space-x-2">
@@ -231,13 +272,18 @@
                     });
                 }
 
+                // Çekim taleplerini inceleme ve hesaplama
                 if (user.withdrawals && user.withdrawals.length > 0) {
                     user.withdrawals.forEach(wit => {
+                        const witAmount = Number(wit.amount) || 0;
+
                         if (wit.status === 'Beklemede') {
+                            totalWithdrawSum += witAmount; // Üst İstatistik: Bekleyen çekimleri topluyoruz
+
                             withdrawHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-red-400 font-orbitron">$${wit.amount}</td>
+                                <td class="py-4 text-red-400 font-orbitron">$${witAmount}</td>
                                 <td class="py-4 text-xs text-gray-500">${new Date(wit.date).toLocaleString('tr-TR')}</td>
                                 <td class="py-4 font-mono text-xs text-green-400 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${wit.wallet}</td>
                                 <td class="py-4 text-right">
@@ -249,12 +295,17 @@
                 }
             });
 
+            // Üst İstatistik Kartlarını Ekrana Yazma
+            document.getElementById('statTotalInvest').innerText = `$${totalInvestSum.toFixed(2)}`;
+            document.getElementById('statTotalProfit').innerText = `$${totalProfitSum.toFixed(2)}`;
+            document.getElementById('statTotalWithdraw').innerText = `$${totalWithdrawSum.toFixed(2)}`;
+
+            // Tabloları Yazma
             document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
             document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
             document.getElementById('pendingInvestmentsTable').innerHTML = pendingInvestHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Onay Bekleyen Yatırım Yok</td></tr>`;
         }
 
-        // Güvenli Çıkış Yapma Mantığı
         function adminLogout() {
             sessionStorage.removeItem('admin_session_pass');
             ADMIN_PASSWORD = "";
@@ -304,7 +355,6 @@
             if(res.ok) { alert("Kayıt silindi."); loadAdminData(); }
         }
 
-        // Şifre kutusunda Enter tuşuna basınca otomatik giriş yapma konforu
         document.getElementById("gatePassword").addEventListener("keyup", function(event) {
             if (event.key === "Enter") { checkAdminLogin(); }
         });
