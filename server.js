@@ -64,6 +64,12 @@ const UserSchema = new mongoose.Schema({
         wallet: String,
         status: { type: String, default: 'Beklemede' },
         date: { type: Date, default: Date.now }
+    }],
+    // 🎲 YENİ: Şanslı Kutu Oyun Geçmişi Şeması
+    luckyBoxHistory: [{
+        resultType: { type: String, required: true }, // WIN, JACKPOT, AMORTI vb.
+        wonAmount: { type: Number, required: true },  // Kazanılan Dolar Miktarı
+        date: { type: Date, default: Date.now }
     }]
 });
 const User = mongoose.model('User', UserSchema);
@@ -80,7 +86,7 @@ app.post('/api/sync', async (req, res) => {
         const { telegramId, name } = req.body;
         let user = await User.findOne({ telegramId });
         if (!user) { 
-            user = new User({ telegramId, name, investments: [], withdrawals: [] }); 
+            user = new User({ telegramId, name, investments: [], withdrawals: [], luckyBoxHistory: [] }); 
             await user.save(); 
         }
         res.json(user);
@@ -140,9 +146,36 @@ app.post('/api/withdraw', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// --- 👮 ADMİN ROTALARI (EKSİKLER TAMAMLANDI) ---
+// 🎲 YENİ: Şanslı Kutu Sonucunu Kaydetme Rotası
+app.post('/api/luckybox/play', async (req, res) => {
+    try {
+        const { telegramId, resultType, wonAmount } = req.body;
+        const user = await User.findOne({ telegramId });
+        
+        if (user) {
+            user.luckyBoxHistory.push({
+                resultType: resultType.toUpperCase(),
+                wonAmount: Number(wonAmount)
+            });
+            await user.save();
 
-// Tüm Kullanıcıları Çekme
+            // Önemli ödüllerde (WIN ve JACKPOT) admine Telegram üzerinden de bilgi verelim
+            if (resultType.toUpperCase() === 'JACKPOT' || Number(wonAmount) > 0) {
+                notifyAdmin(`🎲 <b>ŞANSLI KUTU AÇILDI!</b>\n\n👤 Kullanıcı: <code>${telegramId}</code>\n📊 Sonuç: <b>${resultType}</b>\n💵 Kazanç: <b>$${wonAmount}</b>`);
+            }
+            
+            res.json({ success: true, history: user.luckyBoxHistory });
+        } else {
+            res.status(404).json({ error: "Kullanıcı bulunamadı." });
+        }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- 👮 ADMİN ROTALARI ---
+
+// Tüm Kullanıcıları Çekme (Lucky Box verileri dahil otomatik gider)
 app.post('/api/admin/all', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
@@ -170,7 +203,7 @@ app.post('/api/admin/approve', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🟢 YENİ: İptal Talebini Onaylama Rotaları
+// İptal Talebini Onaylama
 app.post('/api/admin/approve-cancel', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
@@ -187,7 +220,7 @@ app.post('/api/admin/approve-cancel', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 🟢 YENİ: Çekim Talebini Onaylama Rotaları
+// Çekim Talebini Onaylama
 app.post('/api/admin/approve-withdraw', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
