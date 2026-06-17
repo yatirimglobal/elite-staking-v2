@@ -65,10 +65,10 @@ const UserSchema = new mongoose.Schema({
         status: { type: String, default: 'Beklemede' },
         date: { type: Date, default: Date.now }
     }],
-    // 🎲 YENİ: Şanslı Kutu Oyun Geçmişi Şeması
+    // 🎲 Şanslı Kutu Oyun Geçmişi Şeması
     luckyBoxHistory: [{
-        resultType: { type: String, required: true }, // WIN, JACKPOT, AMORTI vb.
-        wonAmount: { type: Number, required: true },  // Kazanılan Dolar Miktarı
+        resultType: { type: String, required: true }, // AMORTI, WIN, JACKPOT
+        wonAmount: { type: Number, required: true },  // Dolar Tutarı
         date: { type: Date, default: Date.now }
     }]
 });
@@ -80,7 +80,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Kullanıcı Senkronizasyon
+// Kullanıcı Senkronizasyon (Bakiye ve geçmişi anlık frontend'e aktarır)
 app.post('/api/sync', async (req, res) => {
     try {
         const { telegramId, name } = req.body;
@@ -146,7 +146,7 @@ app.post('/api/withdraw', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// 🎲 YENİ: Şanslı Kutu Sonucunu Kaydetme Rotası
+// 🎲 Şanslı Kutu Sonucunu Kaydetme ve Bildirme Rotası
 app.post('/api/luckybox/play', async (req, res) => {
     try {
         const { telegramId, resultType, wonAmount } = req.body;
@@ -159,8 +159,8 @@ app.post('/api/luckybox/play', async (req, res) => {
             });
             await user.save();
 
-            // Önemli ödüllerde (WIN ve JACKPOT) admine Telegram üzerinden de bilgi verelim
-            if (resultType.toUpperCase() === 'JACKPOT' || Number(wonAmount) > 0) {
+            // Önemli ödüllerde (WIN ve JACKPOT) Telegram üzerinden admine bilgi verilir
+            if (resultType.toUpperCase() === 'JACKPOT' || Number(wonAmount) >= 5) {
                 notifyAdmin(`🎲 <b>ŞANSLI KUTU AÇILDI!</b>\n\n👤 Kullanıcı: <code>${telegramId}</code>\n📊 Sonuç: <b>${resultType}</b>\n💵 Kazanç: <b>$${wonAmount}</b>`);
             }
             
@@ -175,7 +175,7 @@ app.post('/api/luckybox/play', async (req, res) => {
 
 // --- 👮 ADMİN ROTALARI ---
 
-// Tüm Kullanıcıları Çekme (Lucky Box verileri dahil otomatik gider)
+// Tüm Kullanıcıları Çekme (Lucky Box verileriyle birlikte admin paneline iletilir)
 app.post('/api/admin/all', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
