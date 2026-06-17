@@ -21,7 +21,6 @@
 </head>
 <body class="pb-32">
 
-    <!-- Header Section -->
     <div class="p-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
             <div id="uAvatar" class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center font-black text-black text-lg font-orbitron shadow-[0_0_15px_rgba(243,186,47,0.3)]">?</div>
@@ -45,9 +44,35 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="px-6">
         <div id="tab-home" class="tab-content active">
+            
+            <div class="glass-card p-5 border border-yellow-500/10 shadow-2xl text-center mb-6">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
+                    <div class="text-left">
+                        <span class="text-[8px] text-gray-500 uppercase tracking-widest block font-bold">Elite Oyun Havuzu</span>
+                        <h3 class="text-xs font-bold font-orbitron text-yellow-500 uppercase tracking-tight">Şanslı Kutu (Lucky Box)</h3>
+                    </div>
+                    <div class="bg-black/40 px-2.5 py-1 rounded-xl border border-white/5">
+                        <span class="text-[7px] text-gray-400 uppercase block leading-none mb-0.5">Kutu Bakiyesi</span>
+                        <span id="userBalanceDisplay" class="text-[11px] font-black text-green-400 font-orbitron">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="py-3 flex flex-col items-center justify-center min-h-[120px]">
+                    <div id="luckyBoxGraphic" class="text-5xl transition-all duration-500 transform ease-out hover:scale-110 active:scale-95 select-none">
+                        🎁
+                    </div>
+                    <p id="boxStatusMessage" class="text-[10px] text-gray-400 mt-3 px-2 font-medium leading-relaxed max-w-[260px] mx-auto">
+                        10$ karşılığında şanslı kutuyu aç, 100$'a kadar büyük ödülü anında yakala!
+                    </p>
+                </div>
+
+                <button id="openBoxBtn" onclick="triggerOpenBox()" class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-black font-black py-3 rounded-xl text-[10px] uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_15px_rgba(243,186,47,0.15)]">
+                    Kutuyu Aç (10$)
+                </button>
+            </div>
+
             <h2 class="font-orbitron text-lg font-black mb-6 text-yellow-500 uppercase tracking-tighter italic">Staking Planları</h2>
             <div class="space-y-4">
                 <div class="glass-card p-6 border-l-4 border-yellow-500" onclick="openInvestModal(10, 8)">
@@ -80,7 +105,6 @@
         </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl flex justify-around py-4 z-50">
         <button onclick="switchTab('home')" id="navHome" class="nav-active flex flex-col items-center gap-1">
             <span class="text-xl">💎</span>
@@ -92,7 +116,6 @@
         </button>
     </nav>
 
-    <!-- Modal Section -->
     <div id="modal" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-6 z-[100] backdrop-blur-xl">
         <div class="glass-card w-full max-w-sm p-8 border-yellow-500/20">
             <div id="step1">
@@ -126,7 +149,6 @@
             setInterval(updateUIRuntime, 1000);
         };
 
-        // 🟢 DÜZELTİLDİ: Yenileme butonu artık çalışıyor
         async function manualRefresh() {
             const btn = document.getElementById('refreshBtn');
             btn.classList.add('spinning');
@@ -144,7 +166,68 @@
                 });
                 userData = await res.json();
                 renderInvestments();
+                updateBoxBalanceData(userData.balance); // Kutu bakiyesini eşitle
             } catch(e) { console.error("Sync Error:", e); }
+        }
+
+        // Kutu bakiyesini HTML arayüzüne basan yardımcı fonksiyon
+        function updateBoxBalanceData(balanceValue) {
+            const val = Number(balanceValue) || 0;
+            document.getElementById('userBalanceDisplay').innerText = `$${val.toFixed(2)}`;
+        }
+
+        // 🎲 KUTU AÇMA MEKANİZMASI (Tıklama Fonksiyonu)
+        async function triggerOpenBox() {
+            const user = tg.initDataUnsafe?.user || { id: "1694656329" };
+            const boxGraphic = document.getElementById('luckyBoxGraphic');
+            const statusMsg = document.getElementById('boxStatusMessage');
+            const openBtn = document.getElementById('openBoxBtn');
+
+            openBtn.disabled = true;
+            openBtn.innerText = "Açılıyor...";
+            
+            // Animasyonu tetikle
+            boxGraphic.classList.add('spinning');
+            statusMsg.innerText = "Kutu sallanıyor, şansın hesaplanıyor... 🎲";
+
+            try {
+                const res = await fetch(`${API_URL}/lucky-box/open`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: user.id.toString() })
+                });
+
+                const data = await res.json();
+
+                setTimeout(() => {
+                    boxGraphic.classList.remove('spinning');
+                    openBtn.disabled = false;
+                    openBtn.innerText = "Kutuyu Aç (10$)";
+
+                    if (data.success) {
+                        if (data.resultType === 'LOSE') boxGraphic.innerText = "💨";
+                        else if (data.resultType === 'AMORTI') boxGraphic.innerText = "🪙";
+                        else if (data.resultType === 'WIN') boxGraphic.innerText = "💰";
+                        else if (data.resultType === 'JACKPOT') boxGraphic.innerText = "👑";
+
+                        statusMsg.innerHTML = `<span class="text-yellow-400 font-bold">${data.message}</span>`;
+                        updateBoxBalanceData(data.newBalance);
+                        
+                        // Kullanıcı verisindeki lokal bakiyeyi de güncelle ki senkron bozulmasın
+                        if(userData) userData.balance = data.newBalance;
+
+                        setTimeout(() => { boxGraphic.innerText = "🎁"; }, 3500);
+                    } else {
+                        statusMsg.innerHTML = `<span class="text-red-500 font-bold">${data.message}</span>`;
+                    }
+                }, 1500);
+
+            } catch (e) {
+                boxGraphic.classList.remove('spinning');
+                openBtn.disabled = false;
+                openBtn.innerText = "Kutuyu Aç (10$)";
+                statusMsg.innerText = "Bağlantı hatası.";
+            }
         }
 
         async function cancelInvest(id) {
@@ -163,12 +246,11 @@
                 });
                 if(res.ok) {
                     alert("İptal talebi yöneticiye iletildi.");
-                    syncUser(userData);
+                    syncUser(tg.initDataUnsafe?.user || { id: "1694656329" });
                 }
             } catch (e) { alert("Bağlantı hatası."); }
         }
 
-        // 🟢 DÜZELTİLDİ: Çekim yap fonksiyonu eklendi
         async function withdrawRequest(id, amount) {
             const wallet = prompt("Vade sonu çekim için TRC20 Adresi:");
             if(!wallet) return;
@@ -182,7 +264,6 @@
             } catch(e) { alert("Çekim talebi gönderilemedi."); }
         }
 
-        // 🟢 DÜZELTİLDİ: Çekim butonu durumu artık Varlıklarım sekmesinde kontrol ediliyor
         function renderInvestments() {
             const list = document.getElementById('myInvestmentsList');
             if(!userData.investments || !userData.investments.length) { 
@@ -215,7 +296,6 @@
             }).reverse().join('');
         }
 
-        // 🟢 DÜZELTİLDİ: Sayaç sıfırlandığında "Çekim Yap" butonu otomatik aktifleşir
         function updateUIRuntime() {
             if(!userData || !userData.investments) return;
             let totalLiveBalance = 0;
@@ -244,7 +324,6 @@
                         if(timerEl) timerEl.innerText = "VADE DOLDU";
                         if(profitEl) profitEl.innerText = `$${inv.totalProfit.toFixed(2)}`;
                         totalLiveBalance += (inv.amount + inv.totalProfit);
-                        // Çekim butonunu aktifleştir
                         if(btn) {
                             btn.disabled = false;
                             btn.classList.replace('bg-green-500/10', 'bg-green-600');
@@ -259,7 +338,7 @@
         function openInvestModal(days, rate) { currentPlan = { days, rate }; document.getElementById('step1').classList.remove('hidden'); document.getElementById('step2').classList.add('hidden'); document.getElementById('modal').classList.replace('hidden', 'flex'); }
         function closeModal() { document.getElementById('modal').classList.replace('flex', 'hidden'); }
         function toStep2() { const val = document.getElementById('investAmount').value; if(val < 20) return alert("Min: 20 USDT"); currentPlan.amount = Number(val); document.getElementById('step1').classList.add('hidden'); document.getElementById('step2').classList.remove('hidden'); }
-        async function confirmPay() { const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId.toString(), planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); if(res.ok) { closeModal(); alert("Ödeme bildirimi alındı, onay bekleniyor."); syncUser(userData); } }
+        async function confirmPay() { const res = await fetch(`${API_URL}/invest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telegramId: userData.telegramId.toString(), planDays: currentPlan.days, amount: currentPlan.amount, profit: currentPlan.amount * (currentPlan.rate/100) }) }); if(res.ok) { closeModal(); alert("Ödeme bildirimi alındı, onay bekleniyor."); syncUser(tg.initDataUnsafe?.user || { id: "1694656329" }); } }
         function switchTab(t) { document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.getElementById('navHome').classList.toggle('nav-active', t==='home'); document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); }
     </script>
 </body>
