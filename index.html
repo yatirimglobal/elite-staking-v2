@@ -25,8 +25,6 @@
             100% { transform: translate(1px, -2px) rotate(0deg); }
         }
         .shake-box { animation: shake 0.5s infinite; }
-        
-        /* Aktif Sekme Stili */
         .active-tab { color: #eab308 !important; border-top: 2px solid #eab308; background: rgba(255,255,255,0.02); }
     </style>
 </head>
@@ -38,9 +36,19 @@
             <h1 class="text-xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking</h1>
             <p id="userDisplay" class="text-xs text-gray-400 mt-0.5">Kullanıcı: Yükleniyor...</p>
         </div>
-        <div class="text-right">
-            <span class="text-[10px] uppercase text-gray-500 tracking-widest block">Toplam Varlık / Bakiye</span>
-            <span id="userBalance" class="text-lg font-black text-green-400 font-orbitron">$0.00</span>
+        <div class="flex items-center gap-4 text-right">
+            <div>
+                <span class="text-[9px] uppercase text-gray-500 tracking-widest block">Serbest Bakiye</span>
+                <span id="userBalance" class="text-base font-black text-green-400 font-orbitron">$0.00</span>
+            </div>
+            <div>
+                <span class="text-[9px] uppercase text-gray-500 tracking-widest block">Yatırımdaki Bakiye</span>
+                <span id="userInvestedBalance" class="text-base font-black text-yellow-500 font-orbitron">$0.00</span>
+            </div>
+            <!-- PARA YATIR BUTONU -->
+            <button onclick="openDepositModal()" class="bg-green-600 hover:bg-green-700 text-white font-bold text-[11px] px-3 py-2 rounded-xl uppercase tracking-wider transition-all active:scale-95 ml-2">
+                ➕ Para Yatır
+            </button>
         </div>
     </div>
 
@@ -48,7 +56,6 @@
     <!-- ==================== SEKME 1: YATIRIM YAP ALANI ==================== -->
     <div id="tab-invest-content" class="space-y-6">
         
-        <!-- YAN YANA İKİ BÜYÜK KUTU (Şanslı Kutu & Staking Başlığı) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- 🎲 BÜYÜK KUTU 1: ŞANSLI KUTU OYUNU -->
@@ -79,7 +86,7 @@
             <div class="glass-card rounded-2xl p-6 border border-yellow-500/20 flex flex-col justify-between min-h-[340px]">
                 <div>
                     <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-2">🚀 Staking Yatırım Paketleri</span>
-                    <p class="text-xs text-gray-400 mb-4">Bir paket seçerek kripto varlıklarınızı katlamaya anında başlayın.</p>
+                    <p class="text-xs text-gray-400 mb-4">Serbest bakiyenizle bir paket seçerek kripto varlıklarınızı katlamaya başlayın.</p>
                     
                     <div class="space-y-3">
                         <!-- Paket 1 -->
@@ -113,26 +120,34 @@
         
         <!-- Bakiye ve Çekim Kartı -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="glass-card p-5 rounded-2xl border border-green-500/10 md:col-span-1 flex flex-col justify-between">
+            <div class="glass-card p-5 rounded-2xl border border-green-500/10 flex flex-col justify-between">
                 <div>
-                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Çekilebilir Serbest Bakiye</span>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Serbest Bakiye</span>
                     <span id="assetsBalanceDisplay" class="text-2xl font-black text-green-400 font-orbitron">$0.00</span>
                 </div>
-                <p class="text-[11px] text-gray-500 mt-2">Kutu kazançları ve vadesi dolan staking karları buraya yansır.</p>
+                <p class="text-[11px] text-gray-500 mt-2">Kutu açmak veya yeni paket başlatmak için kullanılabilir nakit bakiye.</p>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl border border-yellow-500/10 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Toplam Stakingde Olan Varlık</span>
+                    <span id="assetsInvestedBalanceDisplay" class="text-2xl font-black text-yellow-500 font-orbitron">$0.00</span>
+                </div>
+                <p class="text-[11px] text-gray-500 mt-2">Şu an aktif olarak işletilen ve vade sonunda serbest kalacak tutar.</p>
             </div>
             
-            <div class="glass-card p-5 rounded-2xl border border-white/5 md:col-span-2 flex flex-col justify-between">
+            <div class="glass-card p-5 rounded-2xl border border-white/5 flex flex-col justify-between">
                 <div>
                     <span class="text-xs font-black text-gray-300 uppercase tracking-wider block mb-1">💸 Para Çekme İşlemi</span>
-                    <p class="text-[11px] text-gray-400 mb-2">Bakiyenizi TRC20 cüzdan adresinize anında çekme talebi oluşturun.</p>
+                    <p class="text-[11px] text-gray-400 mb-2">Serbest bakiyenizi TRC20 cüzdanınıza çekin.</p>
                 </div>
-                <button onclick="openWithdrawModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 text-center">
+                <button onclick="openWithdrawModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 text-center">
                     Çekim Talebi Oluştur
                 </button>
             </div>
         </div>
 
-        <!-- 💼 AKTİF YATIRIMLARINIZ (ANLIK KAR VE İPTAL BUTONLU) -->
+        <!-- 💼 AKTİF YATIRIMLARINIZ -->
         <div class="glass-card rounded-2xl p-6 border border-white/5">
             <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-4">💰 Aktif Staking Varlıklarınız</span>
             <div id="investmentsList" class="space-y-3">
@@ -164,28 +179,50 @@
     </div>
 
 
-    <!-- 💳 SATIN ALMA / TRC20 ÖDEME MODALI -->
-    <div id="paymentModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-50">
-        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.05)]">
+    <!-- ➕ MODAL: PARA YATIRMA MODALI -->
+    <div id="depositModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-blue-500/20 shadow-[0_0_40px_rgba(59,130,246,0.05)]">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">TRC20 USDT Ödeme Adresi</h3>
-                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
+                <h3 class="text-sm font-black font-orbitron uppercase text-blue-400 tracking-wider">Bakiye Yükle (TRC20 USDT)</h3>
+                <button onclick="closeDepositModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
             </div>
 
-            <p class="text-xs text-gray-400 mb-4">Seçtiğiniz paketi başlatmak için yatırmak istediğiniz miktarı aşağıdaki cüzdana gönderip bildirim yapın.</p>
+            <p class="text-xs text-gray-400 mb-4">Hesabınıza serbest bakiye eklemek için aşağıdaki cüzdan adresine transfer yapıp miktarı bildirin.</p>
             
             <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4 select-all">
-                <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">TRC20 USDT Adresi</span>
-                <code id="trc20Address" class="text-xs text-yellow-500 font-mono break-all font-bold">TXyourRealTRC20AddressGoesHere123456</code>
+                <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">Yatırılacak TRC20 USDT Adresi</span>
+                <code class="text-xs text-yellow-500 font-mono break-all font-bold">TXyourRealTRC20AddressGoesHere123456</code>
             </div>
 
             <div class="mb-4">
-                <label class="block text-[10px] uppercase text-gray-400 mb-1 font-semibold">Yatırılacak Tutar ($)</label>
+                <label class="block text-[10px] uppercase text-gray-400 mb-1 font-semibold">Gönderdiğiniz Tutar ($)</label>
+                <input type="number" id="depositAmountInput" value="50" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold font-orbitron text-white focus:outline-none focus:border-blue-500">
+            </div>
+
+            <button onclick="submitDeposit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                Ödemeyi Yaptım, Onaya Gönder
+            </button>
+        </div>
+    </div>
+
+
+    <!-- 💳 MODAL: STAKING PAKETİ BAŞLATMA MODALI -->
+    <div id="paymentModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.05)]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">Staking Paketini Onayla</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <p class="text-xs text-gray-400 mb-4">Bu işlem serbest bakiyeniz kullanılarak anında başlatılacaktır.</p>
+
+            <div class="mb-4">
+                <label class="block text-[10px] uppercase text-gray-400 mb-1 font-semibold">Staking Yapılacak Tutar ($)</label>
                 <input type="number" id="investAmountInput" value="100" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold font-orbitron text-white focus:outline-none focus:border-green-500">
             </div>
 
             <button onclick="submitInvestment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
-                Ödemeyi Yaptım, Bildir
+                Paketi Serbest Bakiyeyle Başlat
             </button>
         </div>
     </div>
@@ -209,6 +246,7 @@
         let TELEGRAM_ID = "1694656329"; 
         let USER_NAME = "Değerli Kullanıcı";
         let CURRENT_BALANCE = 0.00;
+        let INVESTED_BALANCE = 0.00;
 
         let selectedPlanDays = 0;
         let selectedPlanProfitPercent = 0;
@@ -224,7 +262,6 @@
             await syncUser();
         };
 
-        // Sekme Değiştirici (Eski Sistem Düzeni)
         function switchTab(tabName) {
             const investContent = document.getElementById('tab-invest-content');
             const assetsContent = document.getElementById('tab-assets-content');
@@ -258,34 +295,33 @@
                     
                     renderLuckyBoxHistory(user.luckyBoxHistory || []);
                     renderInvestments(user.investments || []);
-                    calculateBalance(user);
+                    
+                    // Sunucudan gelen reel bakiyeleri ata
+                    CURRENT_BALANCE = Number(user.balance || 0);
+                    INVESTED_BALANCE = 0;
+                    
+                    if (user.investments) {
+                        user.investments.forEach(inv => {
+                            if (inv.status === 'Aktif') {
+                                INVESTED_BALANCE += Number(inv.amount || 0);
+                            }
+                        });
+                    }
+
+                    document.getElementById('userBalance').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
+                    document.getElementById('assetsBalanceDisplay').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
+                    document.getElementById('userInvestedBalance').innerText = `$${INVESTED_BALANCE.toFixed(2)}`;
+                    document.getElementById('assetsInvestedBalanceDisplay').innerText = `$${INVESTED_BALANCE.toFixed(2)}`;
                 }
             } catch (err) {
                 console.error("Senkronizasyon hatası:", err);
             }
         }
 
-        function calculateBalance(user) {
-            let initialBonus = 20.00; 
-            let boxExpenses = 0;
-            let boxEarnings = 0;
-
-            if (user.luckyBoxHistory) {
-                boxExpenses = user.luckyBoxHistory.length * 5.00;
-                user.luckyBoxHistory.forEach(l => boxEarnings += (Number(l.wonAmount) || 0));
-            }
-
-            CURRENT_BALANCE = initialBonus - boxExpenses + boxEarnings;
-            if(CURRENT_BALANCE < 0) CURRENT_BALANCE = 0;
-
-            document.getElementById('userBalance').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
-            document.getElementById('assetsBalanceDisplay').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
-        }
-
-        // 🎲 KUTU AÇMA
+        // 🎲 KUTU AÇMA (SERBEST BAKİYEDEN DÜŞER)
         async function openLuckyBox() {
             if (CURRENT_BALANCE < 5.00) {
-                alert("Bakiyeniz yetersiz! Kutu açmak için en az $5.00 bakiyeniz olmalıdır.");
+                alert("Serbest bakiyeniz yetersiz! Kutu açmak için en az $5.00 olmalıdır.");
                 return;
             }
 
@@ -303,15 +339,10 @@
             const rand = Math.random() * 100;
             let selectedReward = { type: 'LOSE', amount: 0.00 };
 
-            if (rand < 55) {
-                selectedReward = { type: 'AMORTI', amount: 1.00 };
-            } else if (rand < 88) {
-                selectedReward = { type: 'LOSE', amount: 0.00 };
-            } else if (rand < 99) {
-                selectedReward = { type: 'WIN', amount: 10.00 };
-            } else {
-                selectedReward = { type: 'JACKPOT', amount: 50.00 };
-            }
+            if (rand < 55) { selectedReward = { type: 'AMORTI', amount: 1.00 }; } 
+            else if (rand < 88) { selectedReward = { type: 'LOSE', amount: 0.00 }; } 
+            else if (rand < 99) { selectedReward = { type: 'WIN', amount: 10.00 }; } 
+            else { selectedReward = { type: 'JACKPOT', amount: 50.00 }; }
 
             setTimeout(async () => {
                 try {
@@ -336,9 +367,9 @@
                             resValue.className = "text-xs font-bold text-gray-500";
                         } else {
                             resValue.innerText = `${selectedReward.type} (+$${selectedReward.amount})`;
-                            if(selectedReward.type === 'JACKPOT') resValue.className = "text-sm font-black font-orbitron text-yellow-400 animate-pulse";
-                            else if(selectedReward.type === 'WIN') resValue.className = "text-sm font-black font-orbitron text-green-400";
-                            else resValue.className = "text-sm font-black font-orbitron text-blue-400";
+                            if(selectedReward.type === 'JACKPOT') resValue.className = "text-xs font-black font-orbitron text-yellow-400 animate-pulse";
+                            else if(selectedReward.type === 'WIN') resValue.className = "text-xs font-black font-orbitron text-green-400";
+                            else resValue.className = "text-xs font-black font-orbitron text-blue-400";
                         }
 
                         await syncUser();
@@ -357,7 +388,28 @@
             }, 1200);
         }
 
-        // --- YATIRIM / ÖDEME SÜREÇLERİ ---
+        // --- PARA YATIRMA MODAL FONKSİYONLARI ---
+        function openDepositModal() { document.getElementById('depositModal').classList.remove('hidden'); }
+        function closeDepositModal() { document.getElementById('depositModal').classList.add('hidden'); }
+
+        async function submitDeposit() {
+            const amount = Number(document.getElementById('depositAmountInput').value);
+            if (!amount || amount <= 0) { alert("Geçerli bir tutar giriniz."); return; }
+
+            try {
+                const res = await fetch(`${API_URL}/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: TELEGRAM_ID, amount })
+                });
+                if (res.ok) {
+                    alert("✅ Bakiye yükleme bildiriminiz başarıyla sisteme düştü! Admin incelemesinden sonra serbest bakiyenize eklenecektir.");
+                    closeDepositModal();
+                } else { alert("Bildirim gönderilemedi."); }
+            } catch(e) { alert("Bağlantı hatası."); }
+        }
+
+        // --- STAKING BAŞLATMA MODAL FONKSİYONLARI ---
         function openPaymentModal(days, profitPercent) {
             selectedPlanDays = days;
             selectedPlanProfitPercent = profitPercent;
@@ -366,13 +418,10 @@
         function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
 
         async function submitInvestment() {
-            const amountInput = document.getElementById('investAmountInput').value;
-            const amount = Number(amountInput);
+            const amount = Number(document.getElementById('investAmountInput').value);
 
-            if (!amount || isNaN(amount) || amount <= 0) {
-                alert("Lütfen geçerli bir yatırım miktarı giriniz.");
-                return;
-            }
+            if (!amount || amount <= 0) { alert("Lütfen geçerli bir miktar giriniz."); return; }
+            if (amount > CURRENT_BALANCE) { alert("Yetersiz Serbest Bakiye! Önce para yatırmalısınız."); return; }
 
             const totalProfit = amount * selectedPlanProfitPercent;
 
@@ -389,21 +438,17 @@
                 });
 
                 if (res.ok) {
-                    alert("💰 Ödeme bildiriminiz başarıyla iletildi! Kontroller sonrasında aktif yatırımlarınıza eklenecektir.");
+                    alert("🚀 Yatırım paketi serbest bakiyenizden başarıyla başlatıldı!");
                     closePaymentModal();
                     await syncUser();
-                    switchTab('assets'); // Direkt varlıkları görsün
-                } else {
-                    alert("Yatırım bildirimi gönderilemedi.");
-                }
-            } catch (e) {
-                alert("Bağlantı hatası yaşandı.");
-            }
+                    switchTab('assets');
+                } else { alert("Yatırım başlatılamadı."); }
+            } catch (e) { alert("Bağlantı hatası yaşandı."); }
         }
 
-        // İPTAL ETME TALEBİ FONKSİYONU
+        // İPTAL ETME TALEBİ
         async function requestCancelInvestment(investId, amount) {
-            const confirmCancel = confirm(`$${amount} tutarındaki bu yatırımı iptal etmek istediğinize emin misiniz? Talep admine iletilecektir.`);
+            const confirmCancel = confirm(`$${amount} tutarındaki yatırımı iptal etmek istiyor musunuz? Talep admine iletilecektir.`);
             if (!confirmCancel) return;
 
             try {
@@ -413,20 +458,18 @@
                     body: JSON.stringify({ telegramId: TELEGRAM_ID, investId: investId })
                 });
                 if (res.ok) {
-                    alert("🚨 İptal talebiniz admine başarıyla gönderildi.");
+                    alert("🚨 İptal talebi admin paneline gönderildi.");
                     await syncUser();
-                } else {
-                    alert("İptal talebi gönderilemedi.");
-                }
-            } catch (e) {
-                alert("Bağlantı hatası oluştu.");
-            }
+                } else { alert("İptal talebi iletilemedi."); }
+            } catch (e) { alert("Bağlantı hatası."); }
         }
 
         async function openWithdrawModal() {
             const amount = prompt("Çekmek istediğiniz tutar ($):");
             const wallet = prompt("TRC20 USDT Cüzdan Adresiniz:");
             if (!amount || !wallet) return;
+
+            if(Number(amount) > CURRENT_BALANCE) { alert("Serbest bakiyenizden fazla miktar çekemezsiniz."); return; }
             
             try {
                 const res = await fetch(`${API_URL}/withdraw`, {
@@ -434,7 +477,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ telegramId: TELEGRAM_ID, amount, wallet })
                 });
-                if (res.ok) { alert("🚨 Çekim talebi başarıyla oluşturuldu."); await syncUser(); }
+                if (res.ok) { alert("🚨 Çekim talebi oluşturuldu."); await syncUser(); }
             } catch (e) { alert("Hata oluştu."); }
         }
 
@@ -464,7 +507,7 @@
 
         function renderInvestments(investments) {
             const list = document.getElementById('investmentsList');
-            if (investments.length === 0) {
+            if (!investments || investments.length === 0) {
                 list.innerHTML = `<p class="text-xs text-gray-500 italic uppercase">Aktif yatırım paketi bulunmuyor.</p>`;
                 return;
             }
@@ -474,7 +517,6 @@
                 if (inv.status === 'Aktif') sColor = "text-green-400";
                 if (inv.status === 'İptal Edildi') sColor = "text-red-500";
 
-                // id yoksa index veya benzersiz alan atanabilir
                 let invId = inv._id || inv.id || index;
 
                 html += `
