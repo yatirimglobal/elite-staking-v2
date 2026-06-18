@@ -7,9 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght=400;700;900&family=Inter:wght=300;400;600;700&display=swap');
-        body { background: #0b0f12; color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        body { background: #0b0f12; color: #f3f4f6; font-family: 'Inter', sans-serif; padding-bottom: 90px; }
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        /* Bulanıklık (blur) efekti kaldırılarak netleştirilmiş kartlar */
         .glass-card { background: rgb(22, 28, 36); border: 1px solid rgba(255, 255, 255, 0.05); }
         
         @keyframes shake {
@@ -26,139 +25,163 @@
             100% { transform: translate(1px, -2px) rotate(0deg); }
         }
         .shake-box { animation: shake 0.5s infinite; }
+        
+        /* Aktif Sekme Stili */
+        .active-tab { color: #eab308 !important; border-top: 2px solid #eab308; background: rgba(255,255,255,0.02); }
     </style>
 </head>
 <body class="p-4 md:p-8 max-w-5xl mx-auto">
 
     <!-- HEADER -->
-    <div class="flex justify-between items-center mb-8 pb-4 border-b border-white/5">
+    <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
         <div>
             <h1 class="text-xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking</h1>
             <p id="userDisplay" class="text-xs text-gray-400 mt-0.5">Kullanıcı: Yükleniyor...</p>
         </div>
         <div class="text-right">
-            <span class="text-[10px] uppercase text-gray-500 tracking-widest block">Kutu & Oyun Bakiyesi</span>
+            <span class="text-[10px] uppercase text-gray-500 tracking-widest block">Toplam Varlık / Bakiye</span>
             <span id="userBalance" class="text-lg font-black text-green-400 font-orbitron">$0.00</span>
         </div>
     </div>
 
-    <!-- ÜST SEÇENEKLER -->
-    <div class="grid grid-cols-2 gap-4 mb-6">
-        <button onclick="openInvestModal()" class="glass-card hover:bg-yellow-500/10 text-yellow-500 font-bold py-4 rounded-xl text-xs uppercase tracking-wider transition-all border border-yellow-500/20 active:scale-95 text-center">
-            🚀 Yatırım Paketleri (Staking)
-        </button>
-        <button onclick="openWithdrawModal()" class="glass-card hover:bg-white/10 text-gray-300 font-bold py-4 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 text-center">
-            💸 Para Çekme Talebi
-        </button>
-    </div>
 
-    <!-- MAIN GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- ==================== SEKME 1: YATIRIM YAP ALANI ==================== -->
+    <div id="tab-invest-content" class="space-y-6">
         
-        <!-- 🎲 BÖLÜM 1: ŞANSLI KUTU OYUN ALANI -->
-        <div class="glass-card rounded-2xl p-6 border border-purple-500/20 shadow-[0_0_30px_rgba(147,51,234,0.05)] flex flex-col items-center text-center">
-            <span class="text-xs font-black tracking-widest uppercase text-purple-400 font-orbitron mb-2">🎁 Şanslı Kutu (Lucky Box)</span>
-            <div class="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-full text-[11px] font-bold mb-4 border border-purple-500/20">
-                Giriş Ücreti: <span class="font-orbitron font-black text-white">$5.00</span>
-            </div>
+        <!-- YAN YANA İKİ BÜYÜK KUTU (Şanslı Kutu & Staking Başlığı) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            <p class="text-xs text-gray-400 mb-6 max-w-xs">Kutuyu açarak şansını dene. Büyük ödül olan <b>$50.00 Jackpot</b> kazanma şansı yakala!</p>
-            
-            <div id="boxContainer" class="w-32 h-32 flex items-center justify-center text-6xl bg-purple-500/5 rounded-2xl border border-purple-500/10 mb-6 shadow-inner transition-transform duration-300">
-                📦
-            </div>
-
-            <div id="boxResult" class="hidden text-center mb-4 bg-black/40 p-3 rounded-xl border border-white/5 w-full">
-                <span id="resultLabel" class="block text-[10px] uppercase tracking-widest text-gray-400">Sonuç</span>
-                <span id="resultValue" class="text-xl font-black font-orbitron uppercase">---</span>
-            </div>
-
-            <button id="btnOpenBox" onclick="openLuckyBox()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.2)]">
-                Kutuyu Aç ($5.00)
-            </button>
-        </div>
-
-        <!-- 💼 BÖLÜM 2: AKTİF YATIRIMLARINIZ (STAKING) -->
-        <div class="glass-card rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
-            <div>
-                <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-4">💰 Aktif Yatırımlarınız</span>
-                <div id="investmentsList" class="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                    <p class="text-xs text-gray-500 italic uppercase">Aktif yatırım paketi bulunmuyor.</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- 📜 BÖLÜM 3: OYUN GEÇMİŞİ -->
-    <div class="glass-card rounded-2xl p-6 mt-6 border border-white/5">
-        <span class="text-xs font-black tracking-widest uppercase text-gray-400 font-orbitron block mb-4">🕒 Kutu Açma Geçmişiniz</span>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-                <thead>
-                    <tr class="border-b border-white/5 text-gray-500 uppercase tracking-wider font-bold">
-                        <th class="pb-2">Sonuç Tipi</th>
-                        <th class="pb-2">Kazanılan Miktar</th>
-                        <th class="pb-2 text-right">Tarih</th>
-                    </tr>
-                </thead>
-                <tbody id="historyTableBody" class="divide-y divide-white/5 text-gray-300">
-                    <tr>
-                        <td colspan="3" class="py-4 text-center text-gray-600 italic uppercase">İşlem Geçmişi Boş</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 📦 MODAL 1: YATIRIM PAKETİ SEÇME MODALI (Bulanıklık Efektleri Kaldırıldı) -->
-    <div id="investModal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
-        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-yellow-500/20 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-sm font-black font-orbitron uppercase text-yellow-500 tracking-wider">Yatırım Paketi Seçin</h3>
-                <button onclick="closeInvestModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
-            </div>
-            
-            <div class="space-y-4">
-                <!-- Paket 1: 10 Günlük -->
-                <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
-                    <div>
-                        <h4 class="text-xs font-bold text-white uppercase">Bronz Paket (10 Gün)</h4>
-                        <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Net Kazanç: %8</p>
+            <!-- 🎲 BÜYÜK KUTU 1: ŞANSLI KUTU OYUNU -->
+            <div class="glass-card rounded-2xl p-6 border border-purple-500/20 shadow-[0_0_30px_rgba(147,51,234,0.05)] flex flex-col items-center text-center justify-between min-h-[340px]">
+                <div class="w-full flex flex-col items-center">
+                    <span class="text-xs font-black tracking-widest uppercase text-purple-400 font-orbitron mb-2">🎲 Şanslı Kutu (Lucky Box)</span>
+                    <div class="bg-purple-500/10 text-purple-300 px-3 py-1 rounded-full text-[11px] font-bold mb-4 border border-purple-500/20">
+                        Giriş Ücreti: <span class="font-orbitron font-black text-white">$5.00</span>
                     </div>
-                    <button onclick="openPaymentModal(10, 0.08)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Seç</button>
-                </div>
-                <!-- Paket 2: 30 Günlük -->
-                <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
-                    <div>
-                        <h4 class="text-xs font-bold text-white uppercase">Gümüş Paket (30 Gün)</h4>
-                        <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Net Kazanç: %20</p>
+                    
+                    <p class="text-xs text-gray-400 mb-4 max-w-xs">Kutuyu açarak şansını dene. Büyük ödül olan <b>$50.00 Jackpot</b> kazanma şansı yakala!</p>
+                    
+                    <div id="boxContainer" class="w-24 h-24 flex items-center justify-center text-5xl bg-purple-500/5 rounded-2xl border border-purple-500/10 mb-4 shadow-inner transition-transform duration-300">
+                        📦
                     </div>
-                    <button onclick="openPaymentModal(30, 0.20)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Seç</button>
+
+                    <div id="boxResult" class="hidden text-center mb-4 bg-black/40 p-2 rounded-xl border border-white/5 w-full">
+                        <span id="resultValue" class="text-sm font-black font-orbitron uppercase">---</span>
+                    </div>
                 </div>
+
+                <button id="btnOpenBox" onclick="openLuckyBox()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(147,51,234,0.2)]">
+                    Kutuyu Aç ($5.00)
+                </button>
             </div>
+
+            <!-- 🚀 BÜYÜK KUTU 2: STAKING PAKETLERİ LİSTESİ -->
+            <div class="glass-card rounded-2xl p-6 border border-yellow-500/20 flex flex-col justify-between min-h-[340px]">
+                <div>
+                    <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-2">🚀 Staking Yatırım Paketleri</span>
+                    <p class="text-xs text-gray-400 mb-4">Bir paket seçerek kripto varlıklarınızı katlamaya anında başlayın.</p>
+                    
+                    <div class="space-y-3">
+                        <!-- Paket 1 -->
+                        <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
+                            <div>
+                                <h4 class="text-xs font-bold text-white uppercase">Bronz Paket (10 Gün)</h4>
+                                <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Kar: %8</p>
+                            </div>
+                            <button onclick="openPaymentModal(10, 0.08)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Yatırım Yap</button>
+                        </div>
+                        <!-- Paket 2 -->
+                        <div class="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-yellow-500/30 transition-all flex justify-between items-center">
+                            <div>
+                                <h4 class="text-xs font-bold text-white uppercase">Gümüş Paket (30 Gün)</h4>
+                                <p class="text-[10px] text-green-400 mt-0.5 font-semibold">Toplam Kar: %20</p>
+                            </div>
+                            <button onclick="openPaymentModal(30, 0.20)" class="bg-yellow-500 hover:bg-yellow-600 text-black font-black text-[10px] px-4 py-2 rounded-lg uppercase transition-all">Yatırım Yap</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-center text-gray-500 mt-4 uppercase tracking-wider">Güvenli TRC20 Altyapısı</div>
+            </div>
+
         </div>
+
     </div>
 
-    <!-- 💳 MODAL 2: TRC20 ADRESİ VE ÖDEME MODALI (Bulanıklık Efektleri Kaldırıldı) -->
+
+    <!-- ==================== SEKME 2: VARLIKLARIM ALANI ==================== -->
+    <div id="tab-assets-content" class="space-y-6 hidden">
+        
+        <!-- Bakiye ve Çekim Kartı -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="glass-card p-5 rounded-2xl border border-green-500/10 md:col-span-1 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Çekilebilir Serbest Bakiye</span>
+                    <span id="assetsBalanceDisplay" class="text-2xl font-black text-green-400 font-orbitron">$0.00</span>
+                </div>
+                <p class="text-[11px] text-gray-500 mt-2">Kutu kazançları ve vadesi dolan staking karları buraya yansır.</p>
+            </div>
+            
+            <div class="glass-card p-5 rounded-2xl border border-white/5 md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-black text-gray-300 uppercase tracking-wider block mb-1">💸 Para Çekme İşlemi</span>
+                    <p class="text-[11px] text-gray-400 mb-2">Bakiyenizi TRC20 cüzdan adresinize anında çekme talebi oluşturun.</p>
+                </div>
+                <button onclick="openWithdrawModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 text-center">
+                    Çekim Talebi Oluştur
+                </button>
+            </div>
+        </div>
+
+        <!-- 💼 AKTİF YATIRIMLARINIZ (ANLIK KAR VE İPTAL BUTONLU) -->
+        <div class="glass-card rounded-2xl p-6 border border-white/5">
+            <span class="text-xs font-black tracking-widest uppercase text-yellow-500 font-orbitron block mb-4">💰 Aktif Staking Varlıklarınız</span>
+            <div id="investmentsList" class="space-y-3">
+                <p class="text-xs text-gray-500 italic uppercase">Aktif yatırım paketi bulunmuyor.</p>
+            </div>
+        </div>
+
+        <!-- 🕒 OYUN GEÇMİŞİ -->
+        <div class="glass-card rounded-2xl p-6 border border-white/5">
+            <span class="text-xs font-black tracking-widest uppercase text-gray-400 font-orbitron block mb-4">🕒 Kutu Açma Geçmişi</span>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-white/5 text-gray-500 uppercase tracking-wider font-bold">
+                            <th class="pb-2">Sonuç Tipi</th>
+                            <th class="pb-2">Miktar</th>
+                            <th class="pb-2 text-right">Saat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-white/5 text-gray-300">
+                        <tr>
+                            <td colspan="3" class="py-4 text-center text-gray-600 italic uppercase">İşlem Geçmişi Boş</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- 💳 SATIN ALMA / TRC20 ÖDEME MODALI -->
     <div id="paymentModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-50">
         <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-green-500/20 shadow-[0_0_40px_rgba(34,197,94,0.05)]">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">TRC20 USDT Ödeme Bilgisi</h3>
+                <h3 class="text-sm font-black font-orbitron uppercase text-green-400 tracking-wider">TRC20 USDT Ödeme Adresi</h3>
                 <button onclick="closePaymentModal()" class="text-gray-400 hover:text-white text-xl font-bold p-1">&times;</button>
             </div>
 
-            <p class="text-xs text-gray-400 mb-4">Lütfen seçtiğiniz pakete ait yatırmak istediğiniz tutarı aşağıdaki TRC20 cüzdan adresine gönderin.</p>
+            <p class="text-xs text-gray-400 mb-4">Seçtiğiniz paketi başlatmak için yatırmak istediğiniz miktarı aşağıdaki cüzdana gönderip bildirim yapın.</p>
             
-            <!-- Cüzdan Bilgi Kutusu -->
             <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4 select-all">
-                <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">TRC20 USDT Adresiniz</span>
+                <span class="block text-[9px] uppercase text-gray-500 tracking-wider mb-1">TRC20 USDT Adresi</span>
                 <code id="trc20Address" class="text-xs text-yellow-500 font-mono break-all font-bold">TXyourRealTRC20AddressGoesHere123456</code>
             </div>
 
             <div class="mb-4">
                 <label class="block text-[10px] uppercase text-gray-400 mb-1 font-semibold">Yatırılacak Tutar ($)</label>
-                <input type="number" id="investAmountInput" value="100" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold font-orbitron text-white focus:outline-none focus:border-green-500/5">
+                <input type="number" id="investAmountInput" value="100" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold font-orbitron text-white focus:outline-none focus:border-green-500">
             </div>
 
             <button onclick="submitInvestment()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider transition-all active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
@@ -166,6 +189,20 @@
             </button>
         </div>
     </div>
+
+
+    <!-- ==================== ESKİ SİSTEM SABİT ALT NAVİGASYON BARINIZ ==================== -->
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-white/10 grid grid-cols-2 h-16 z-40">
+        <button id="btn-nav-invest" onclick="switchTab('invest')" class="flex flex-col items-center justify-center text-xs font-bold text-gray-400 transition-all active:scale-95 active-tab">
+            <span class="text-lg mb-0.5">🚀</span>
+            <span>Yatırım Yap</span>
+        </button>
+        <button id="btn-nav-assets" onclick="switchTab('assets')" class="flex flex-col items-center justify-center text-xs font-bold text-gray-400 transition-all active:scale-95">
+            <span class="text-lg mb-0.5">💼</span>
+            <span>Varlıklarım</span>
+        </button>
+    </div>
+
 
     <script>
         const API_URL = '/api';
@@ -186,6 +223,26 @@
             }
             await syncUser();
         };
+
+        // Sekme Değiştirici (Eski Sistem Düzeni)
+        function switchTab(tabName) {
+            const investContent = document.getElementById('tab-invest-content');
+            const assetsContent = document.getElementById('tab-assets-content');
+            const btnInvest = document.getElementById('btn-nav-invest');
+            const btnAssets = document.getElementById('btn-nav-assets');
+
+            if (tabName === 'invest') {
+                investContent.classList.remove('hidden');
+                assetsContent.classList.add('hidden');
+                btnInvest.classList.add('active-tab');
+                btnAssets.classList.remove('active-tab');
+            } else {
+                investContent.classList.add('hidden');
+                assetsContent.classList.remove('hidden');
+                btnInvest.classList.remove('active-tab');
+                btnAssets.classList.add('active-tab');
+            }
+        }
 
         async function syncUser() {
             try {
@@ -222,9 +279,10 @@
             if(CURRENT_BALANCE < 0) CURRENT_BALANCE = 0;
 
             document.getElementById('userBalance').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
+            document.getElementById('assetsBalanceDisplay').innerText = `$${CURRENT_BALANCE.toFixed(2)}`;
         }
 
-        // 🎲 ŞANSLI KUTU FONKSİYONU
+        // 🎲 KUTU AÇMA
         async function openLuckyBox() {
             if (CURRENT_BALANCE < 5.00) {
                 alert("Bakiyeniz yetersiz! Kutu açmak için en az $5.00 bakiyeniz olmalıdır.");
@@ -275,12 +333,12 @@
                         
                         if (selectedReward.type === 'LOSE') {
                             resValue.innerText = "KUTU BOŞ ÇIKTI!";
-                            resValue.className = "text-sm font-bold text-gray-500";
+                            resValue.className = "text-xs font-bold text-gray-500";
                         } else {
                             resValue.innerText = `${selectedReward.type} (+$${selectedReward.amount})`;
-                            if(selectedReward.type === 'JACKPOT') resValue.className = "text-xl font-black font-orbitron text-yellow-400 animate-pulse";
-                            else if(selectedReward.type === 'WIN') resValue.className = "text-xl font-black font-orbitron text-green-400";
-                            else resValue.className = "text-xl font-black font-orbitron text-blue-400";
+                            if(selectedReward.type === 'JACKPOT') resValue.className = "text-sm font-black font-orbitron text-yellow-400 animate-pulse";
+                            else if(selectedReward.type === 'WIN') resValue.className = "text-sm font-black font-orbitron text-green-400";
+                            else resValue.className = "text-sm font-black font-orbitron text-blue-400";
                         }
 
                         await syncUser();
@@ -299,14 +357,10 @@
             }, 1200);
         }
 
-        // --- MODAL YÖNETİMLERİ (Net Açılış / Kapanış) ---
-        function openInvestModal() { document.getElementById('investModal').classList.remove('hidden'); }
-        function closeInvestModal() { document.getElementById('investModal').classList.add('hidden'); }
-
+        // --- YATIRIM / ÖDEME SÜREÇLERİ ---
         function openPaymentModal(days, profitPercent) {
             selectedPlanDays = days;
             selectedPlanProfitPercent = profitPercent;
-            closeInvestModal(); 
             document.getElementById('paymentModal').classList.remove('hidden');
         }
         function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
@@ -335,14 +389,37 @@
                 });
 
                 if (res.ok) {
-                    alert("💰 Ödeme bildiriminiz başarıyla oluşturuldu ve admine iletildi! Kontroller sonrasında aktif edilecektir.");
+                    alert("💰 Ödeme bildiriminiz başarıyla iletildi! Kontroller sonrasında aktif yatırımlarınıza eklenecektir.");
                     closePaymentModal();
                     await syncUser();
+                    switchTab('assets'); // Direkt varlıkları görsün
                 } else {
                     alert("Yatırım bildirimi gönderilemedi.");
                 }
             } catch (e) {
                 alert("Bağlantı hatası yaşandı.");
+            }
+        }
+
+        // İPTAL ETME TALEBİ FONKSİYONU
+        async function requestCancelInvestment(investId, amount) {
+            const confirmCancel = confirm(`$${amount} tutarındaki bu yatırımı iptal etmek istediğinize emin misiniz? Talep admine iletilecektir.`);
+            if (!confirmCancel) return;
+
+            try {
+                const res = await fetch(`${API_URL}/invest/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: TELEGRAM_ID, investId: investId })
+                });
+                if (res.ok) {
+                    alert("🚨 İptal talebiniz admine başarıyla gönderildi.");
+                    await syncUser();
+                } else {
+                    alert("İptal talebi gönderilemedi.");
+                }
+            } catch (e) {
+                alert("Bağlantı hatası oluştu.");
             }
         }
 
@@ -377,9 +454,9 @@
                 
                 html += `
                 <tr class="border-b border-white/5">
-                    <td class="py-3 uppercase text-[11px] ${color}">${log.resultType === 'LOSE' ? 'BOŞ KUTU' : log.resultType}</td>
-                    <td class="py-3 font-orbitron text-purple-400">$${Number(log.wonAmount).toFixed(2)}</td>
-                    <td class="py-3 text-right text-gray-500">${log.date ? new Date(log.date).toLocaleTimeString('tr-TR') : '---'}</td>
+                    <td class="py-2.5 uppercase text-[11px] ${color}">${log.resultType === 'LOSE' ? 'BOŞ KUTU' : log.resultType}</td>
+                    <td class="py-2.5 font-orbitron text-purple-400">$${Number(log.wonAmount).toFixed(2)}</td>
+                    <td class="py-2.5 text-right text-gray-500">${log.date ? new Date(log.date).toLocaleTimeString('tr-TR') : '---'}</td>
                 </tr>`;
             });
             tbody.innerHTML = html;
@@ -392,20 +469,30 @@
                 return;
             }
             let html = '';
-            investments.forEach(inv => {
+            investments.forEach((inv, index) => {
                 let sColor = "text-yellow-500";
                 if (inv.status === 'Aktif') sColor = "text-green-400";
                 if (inv.status === 'İptal Edildi') sColor = "text-red-500";
 
+                // id yoksa index veya benzersiz alan atanabilir
+                let invId = inv._id || inv.id || index;
+
                 html += `
-                <div class="bg-white/5 p-4 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                <div class="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between sm:items-center text-xs gap-3">
                     <div>
                         <span class="font-bold block text-gray-200">${inv.planDays} Günlük Staking Paketi</span>
-                        <span class="text-[10px] uppercase ${sColor} font-semibold mt-0.5 block">${inv.status}</span>
+                        <span class="text-[10px] uppercase ${sColor} font-semibold mt-0.5 block">Durum: ${inv.status}</span>
                     </div>
-                    <div class="text-right">
-                        <span class="font-orbitron text-yellow-500 font-black block">$${inv.amount}</span>
-                        <span class="text-[9px] text-gray-500">Hedef Kazanç: +$${inv.totalProfit}</span>
+                    <div class="flex items-center gap-4 justify-between sm:justify-end">
+                        <div class="text-right">
+                            <span class="font-orbitron text-yellow-500 font-black block">$${inv.amount}</span>
+                            <span class="text-[9px] text-green-400">Net Kar: +$${Number(inv.totalProfit || inv.profit).toFixed(2)}</span>
+                        </div>
+                        ${inv.status === 'Aktif' || inv.status === 'Beklemede' ? `
+                            <button onclick="requestCancelInvestment('${invId}', ${inv.amount})" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all">
+                                İptal Et
+                            </button>
+                        ` : ''}
                     </div>
                 </div>`;
             });
