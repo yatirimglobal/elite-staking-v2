@@ -6,23 +6,31 @@ const path = require('path');
 
 const app = express();
 
-// Render.com için modern JSON ve CORS ayarları
 app.use(cors());
 app.use(express.json());
+
+// Render üzerindeki statik dosya yolu hatasını (ENOENT) çözen güvenli yönlendirme
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ==================== CONFIGURATION ====================
+// ==================== SABİT VE ESKİ YAPILANDIRMALAR ====================
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://root:root@cluster0.abcde.mongodb.net/cryptoInvest?retryWrites=true&w=majority"; 
 const BOT_TOKEN = process.env.BOT_TOKEN || "7330554279:AAH-P3M_YourActualBotTokenHere";
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "1694656329"; // Furkan'ın Telegram ID'si
 
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("🟢 MongoDB Bağlantısı Başarılı."))
-  .catch(err => console.error("🔴 MongoDB Bağlantı Hatası:", err));
+// Render platformu için zaman aşımı ve stabilite bağlantı ayarları
+mongoose.connect(MONGO_URI, {
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+})
+.then(() => console.log("🟢 MongoDB Bağlantısı Başarılı."))
+.catch(err => {
+    console.error("🔴 MongoDB Bağlantı Hatası! Lütfen Render panelinden MONGO_URI kontrol et.");
+    console.error(err.message);
+});
 
-// ==================== MONGOOSE MODELS ====================
+// ==================== VERİTABANI ŞEMALARI (ESKİ + YENİ) ====================
 
-// Para Yatırma Talepleri Şeması
+// Bakiye Yükleme Talepleri
 const DepositSchema = new mongoose.Schema({
     telegramId: String,
     amount: Number,
@@ -31,11 +39,11 @@ const DepositSchema = new mongoose.Schema({
 });
 const Deposit = mongoose.model('Deposit', DepositSchema);
 
-// Kullanıcı Şeması
+// Kullanıcı Veri Yapısı (Serbest Bakiye ve Geçmiş Tamamen Korundu)
 const UserSchema = new mongoose.Schema({
     telegramId: { type: String, unique: true, required: true },
     name: String,
-    balance: { type: Number, default: 0.00 }, // Serbest Bakiye
+    balance: { type: Number, default: 0.00 }, // Serbest Bakiye (Kutu açma ve çekim için)
     luckyBoxHistory: [{
         resultType: String,
         wonAmount: Number,
@@ -45,7 +53,7 @@ const UserSchema = new mongoose.Schema({
         planDays: Number,
         amount: Number,
         profit: Number,
-        status: { type: String, default: 'Aktif' }, // Aktif, Beklemede, İptal Edildi, Tamamlandı
+        status: { type: String, default: 'Aktif' }, // Aktif, Beklemede, İptal Edildi
         date: { type: Date, default: Date.now }
     }],
     withdrawals: [{
@@ -57,7 +65,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// ==================== TELEGRAM BOT HELPER ====================
+// ==================== ADMİN TELEGRAM BİLDİRİMLERİ ====================
 async function sendAdminNotification(text, replyMarkup = null) {
     try {
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -67,21 +75,20 @@ async function sendAdminNotification(text, replyMarkup = null) {
             reply_markup: replyMarkup
         });
     } catch (err) {
-        console.error("🔴 Telegram bildirim hatası:", err.response?.data || err.message);
+        console.error("🔴 Telegram bildirim hatası:", err.message);
     }
 }
 
-// ==================== API ENDPOINTS ====================
+// ==================== API UÇ NOKTALARI ====================
 
-// 1. Kullanıcı Senkronizasyonu (Giriş)
+// Giriş ve Senkronizasyon (Eski bakiye mantığı ezilmez, güvenlidir)
 app.post('/api/sync', async (req, res) => {
     const { telegramId, name } = req.body;
     if (!telegramId) return res.status(400).json({ error: "telegramId gerekli" });
-
     try {
         let user = await User.findOne({ telegramId });
         if (!user) {
-            user = new User({ telegramId, name, balance: 10.00 }); // Yeni üyeye $10 hoşgeldin hediyesi
+            user = new User({ telegramId, name, balance: 10.00 }); // Hoş geldin bonusu
             await user.save();
         } else if (name && user.name !== name) {
             user.name = name;
@@ -93,11 +100,10 @@ app.post('/api/sync', async (req, res) => {
     }
 });
 
-// 2. Para Yatırma Talebi Oluşturma
+// Yeni Eklenen: Para Yatırma Talebi Bildirimi
 app.post('/api/deposit', async (req, res) => {
     const { telegramId, amount } = req.body;
     if (!telegramId || !amount || amount <= 0) return res.status(400).json({ error: "Geçersiz veriler" });
-
     try {
         const user = await User.findOne({ telegramId });
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
@@ -119,21 +125,17 @@ app.post('/api/deposit', async (req, res) => {
                 ]
             ]
         };
-
         await sendAdminNotification(message, inlineKeyboard);
-        return res.json({ success: true, message: "Talep admine iletildi" });
-
+        return res.json({ success: true, message: "Talep iletildi" });
     } catch (err) {
-        console.error(err);
         return res.status(500).json({ error: "Sistem hatası" });
     }
 });
 
-// 3. Şanslı Kutu Oyunu
+// Şanslı Kutu (Serbest Bakiyeden harcar ve Serbest Bakiyeye ekler)
 app.post('/api/luckybox/play', async (req, res) => {
     const { telegramId, resultType, wonAmount } = req.body;
     const BOX_COST = 5.00;
-
     try {
         const user = await User.findOne({ telegramId });
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
@@ -146,17 +148,15 @@ app.post('/api/luckybox/play', async (req, res) => {
         if (resultType === 'WIN' || resultType === 'JACKPOT') {
             await sendAdminNotification(`🎲 <b>${user.name}</b> bir kutu açtı ve <b>$${wonAmount} (${resultType})</b> kazandı!`);
         }
-
         return res.json({ success: true, newBalance: user.balance });
     } catch (err) {
         return res.status(500).json({ error: "Oyun kaydedilemedi" });
     }
 });
 
-// 4. Staking Yatırım Paketi Başlatma
+// Staking Yatırımı (Serbest bakiyeyi eksiltir, yatırımdaki bakiyeye aktarır)
 app.post('/api/invest', async (req, res) => {
     const { telegramId, planDays, amount, profit } = req.body;
-
     try {
         const user = await User.findOne({ telegramId });
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
@@ -166,40 +166,37 @@ app.post('/api/invest', async (req, res) => {
         user.investments.push({ planDays, amount, profit, status: 'Aktif' });
         await user.save();
 
-        await sendAdminNotification(`🚀 <b>${user.name}</b> serbest bakiyesiyle yeni bir yatırım başlattı!\n💵 Tutar: $${amount}\n📅 Vade: ${planDays} Gün\n📈 Beklenen Kar: +$${profit}`);
+        await sendAdminNotification(`🚀 <b>${user.name}</b> yeni bir staking başlattı!\n💵 Tutar: $${amount}\n📅 Vade: ${planDays} Gün\n📈 Net Kar: +$${profit}`);
         return res.json({ success: true, newBalance: user.balance });
     } catch (err) {
         return res.status(500).json({ error: "Yatırım başlatılamadı" });
     }
 });
 
-// 5. Yatırım İptal Talebi
+// Yatırım İptal Talebi (Eski Düzen)
 app.post('/api/invest/cancel', async (req, res) => {
     const { telegramId, investId } = req.body;
-
     try {
         const user = await User.findOne({ telegramId });
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
 
         const investment = user.investments.id(investId);
-        if (!investment) return res.status(404).json({ error: "Yatırım kaydı bulunamadı" });
+        if (!investment) return res.status(404).json({ error: "Yatırım bulunamadı" });
 
         investment.status = 'Beklemede'; 
         await user.save();
 
-        const msg = `🚨 <b>YATIRIM İPTAL TALEBİ</b>\n\n👤 Kullanıcı: ${user.name}\n💵 Tutar: $${investment.amount}\n\nİptali onaylamak için admin paneline bakın veya manuel müdahale edin.`;
+        const msg = `🚨 <b>YATIRIM İPTAL TALEBİ</b>\n\n👤 Kullanıcı: ${user.name}\n💵 Tutar: $${investment.amount}\n\nİptali onaylamak için admin paneline bakın.`;
         await sendAdminNotification(msg);
-
         return res.json({ success: true });
     } catch (err) {
         return res.status(500).json({ error: "İptal talebi işlenemedi" });
     }
 });
 
-// 6. Para Çekme Talebi Oluşturma
+// Para Çekme Talebi (Serbest bakiyeden düşer)
 app.post('/api/withdraw', async (req, res) => {
     const { telegramId, amount, wallet } = req.body;
-
     try {
         const user = await User.findOne({ telegramId });
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
@@ -211,7 +208,6 @@ app.post('/api/withdraw', async (req, res) => {
 
         const msg = `💸 <b>PARA ÇEKME TALEBİ</b>\n\n👤 Kullanıcı: ${user.name}\n💵 Tutar: $${amount}\n🏦 Cüzdan: <code>${wallet}</code>`;
         await sendAdminNotification(msg);
-
         return res.json({ success: true });
     } catch (err) {
         return res.status(500).json({ error: "Çekim talebi oluşturulamadı" });
@@ -220,8 +216,7 @@ app.post('/api/withdraw', async (req, res) => {
 
 // ==================== TELEGRAM WEBHOOK / CALLBACK HANDLING ====================
 app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
-    // Render.com'un zaman aşımına düşmemesi için hemen 200 OK yanıtı veriyoruz
-    res.status(200).send('OK'); 
+    res.status(200).send('OK'); // Render timeout yememesi için hızlı cevap
 
     const { callback_query } = req.body;
     if (!callback_query) return;
@@ -243,7 +238,7 @@ app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
             if (isApprove) {
                 depositTask.status = 'Onaylandı';
                 if (targetUser) {
-                    targetUser.balance += Number(depositTask.amount); 
+                    targetUser.balance += Number(depositTask.amount); // Serbest bakiyeye güvenle ekle
                     await targetUser.save();
                 }
                 await depositTask.save();
@@ -266,18 +261,17 @@ app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
                 });
             }
         } catch (e) {
-            console.error("Callback işleme hatası:", e.message);
+            console.error("Callback hatası:", e.message);
         }
     }
 });
 
-// Statik Dosya Dağıtımı
+// Geri kalan tüm istekleri index.html'e yönlendiriyoruz
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// START SERVER (Render.com PORT atamasını otomatik algılar)
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 Sunucu ${PORT} portunda başarıyla başlatıldı.`);
 });
