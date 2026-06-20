@@ -51,7 +51,6 @@ async function notifyUser(userId, msg) {
 mongoose.connect(dbURI)
     .then(() => {
         console.log("✅ MongoDB Bağlı");
-        // Eğer SERVER_URL tanımlanmışsa Render üzerindeki webhook ayarını otomatik yapar
         if (SERVER_URL && SERVER_URL.trim() !== "") {
             axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${SERVER_URL}/bot${BOT_TOKEN}`)
                 .then(() => console.log("🤖 Telegram Webhook başarıyla senkronize edildi."))
@@ -160,7 +159,6 @@ app.post('/api/invest', async (req, res) => {
             return res.status(400).json({ error: "Yetersiz serbest bakiye." });
         }
         
-        // Yatırım miktarını serbest bakiyeden düşüyoruz
         user.balance -= Number(amount);
 
         user.investments.push({ 
@@ -187,7 +185,6 @@ app.post('/api/luckybox/play', async (req, res) => {
         if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
         if (user.balance < BOX_COST) return res.status(400).json({ error: "Yetersiz serbest bakiye." });
 
-        // Ücreti düş, kazancı ekle
         user.balance = user.balance - BOX_COST + Number(wonAmount);
         user.luckyBoxHistory.push({ resultType, wonAmount: Number(wonAmount) });
         await user.save();
@@ -236,7 +233,6 @@ app.post('/api/withdraw', async (req, res) => {
             return res.status(400).json({ error: "Yetersiz serbest bakiye." });
         }
 
-        // Çekilen miktarı anlık serbest bakiyeden düşüyoruz
         user.balance -= Number(amount);
         user.withdrawals.push({ amount: Number(amount), wallet, status: 'Beklemede' });
         await user.save();
@@ -258,6 +254,63 @@ app.post('/api/admin/all', async (req, res) => {
         return res.json(users);
     } catch (e) { 
         return res.status(500).json({ error: e.message }); 
+    }
+});
+
+// ➕ YENİ ROTALAR: Admin Panelinde Bakiye Yükleme Taleplerini Listeleme
+app.post('/api/admin/deposits', async (req, res) => {
+    try {
+        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
+        const deposits = await Deposit.find().sort({ date: -1 });
+        return res.json(deposits);
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+// ➕ YENİ ROTALAR: Admin Panelinden Bakiye Yüklemeyi Onaylama
+app.post('/api/admin/deposit/approve', async (req, res) => {
+    try {
+        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
+        const { depositId } = req.body;
+        
+        const depositTask = await Deposit.findById(depositId);
+        if (!depositTask) return res.status(404).json({ error: "Yükleme talebi bulunamadı." });
+        if (depositTask.status !== 'Beklemede') return res.status(400).json({ error: "Bu talep zaten işleme alınmış." });
+
+        depositTask.status = 'Onaylandı';
+        await depositTask.save();
+
+        const targetUser = await User.findOne({ telegramId: depositTask.telegramId });
+        if (targetUser) {
+            targetUser.balance = (targetUser.balance || 0) + Number(depositTask.amount);
+            await targetUser.save();
+            await notifyUser(depositTask.telegramId, `🟢 <b>Bakiye Yükleme Talebiniz Onaylandı!</b>\n\n$${depositTask.amount} tutarı serbest bakiyenize eklenmiştir.`);
+        }
+
+        return res.json({ success: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+// ➕ YENİ ROTALAR: Admin Panelinden Bakiye Yüklemeyi Reddetme
+app.post('/api/admin/deposit/reject', async (req, res) => {
+    try {
+        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
+        const { depositId } = req.body;
+
+        const depositTask = await Deposit.findById(depositId);
+        if (!depositTask) return res.status(404).json({ error: "Yükleme talebi bulunamadı." });
+        if (depositTask.status !== 'Beklemede') return res.status(400).json({ error: "Bu talep zaten işleme alınmış." });
+
+        depositTask.status = 'Reddedildi';
+        await depositTask.save();
+
+        await notifyUser(depositTask.telegramId, `🔴 <b>Bakiye Yükleme Talebiniz Reddedildi.</b>\n\nLütfen gönderdiğiniz tutarı ve işlemi kontrol edin.`);
+        return res.json({ success: true });
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
     }
 });
 
@@ -347,7 +400,6 @@ app.post('/api/admin/delete-invest', async (req, res) => {
 
 // ==================== TELEGRAM WEBHOOK / CALLBACK HANDLING ====================
 app.post(`/bot${BOT_TOKEN}`, async (req, res) => {
-    // Telegram ağ geçidini bekletmemek için anında ham yanıt dönüyoruz
     res.status(200).send('OK');
 
     const { callback_query } = req.body;
