@@ -82,6 +82,27 @@
             </div>
         </div>
 
+        <div class="admin-card rounded-2xl p-6 mb-8 shadow-xl border border-blue-500/10">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-xl">💳</span>
+                <h2 class="font-orbitron font-bold text-md text-blue-400 uppercase tracking-tight">Bakiye Yükleme Talepleri (Para Yükleme Bildirimleri)</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-500 text-[11px] uppercase tracking-wider">
+                            <th class="pb-3">Kullanıcı (Telegram ID)</th>
+                            <th class="pb-3">Yüklenecek Miktar</th>
+                            <th class="pb-3">Talep Tarihi</th>
+                            <th class="pb-3">Durum</th>
+                            <th class="pb-3 text-right">Aksiyonlar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depositRequestsTable" class="divide-y divide-white/5 font-medium"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="admin-card rounded-2xl p-6 mb-8 shadow-xl border border-purple-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">🎁</span>
@@ -199,8 +220,7 @@
                     sessionStorage.setItem('admin_session_pass', ADMIN_PASSWORD);
                     document.getElementById('loginGate').classList.add('hidden');
                     document.getElementById('adminContent').classList.remove('hidden');
-                    const users = await res.json();
-                    renderTablesAndStats(users);
+                    loadAdminData();
                 } else {
                     alert("❌ Hatalı Şifre! Giriş engellendi.");
                     ADMIN_PASSWORD = "";
@@ -210,32 +230,43 @@
             }
         }
 
+        // 🔄 MODİFİKASYON: Hem kullanıcı verilerini hem de bakiye taleplerini paralel çeker
         async function loadAdminData() {
             try {
-                const res = await fetch(`${API_URL}/admin/all`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: ADMIN_PASSWORD })
-                });
+                const [resUsers, resDeposits] = await Promise.all([
+                    fetch(`${API_URL}/admin/all`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: ADMIN_PASSWORD })
+                    }),
+                    fetch(`${API_URL}/admin/deposits`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: ADMIN_PASSWORD })
+                    })
+                ]);
 
-                if (!res.ok) {
+                if (!resUsers.ok || !resDeposits.ok) {
                     alert("Oturum süresi doldu veya yetkisiz erişim!");
                     adminLogout();
                     return;
                 }
 
-                const users = await res.json();
-                renderTablesAndStats(users);
+                const users = await resUsers.json();
+                const deposits = await resDeposits.json();
+                
+                renderTablesAndStats(users, deposits);
             } catch (e) {
                 alert("Veriler yenilenirken hata oluştu.");
             }
         }
 
-        function renderTablesAndStats(users) {
+        function renderTablesAndStats(users, deposits) {
             let cancelHTML = '';
             let withdrawHTML = '';
             let pendingInvestHTML = '';
             let luckyBoxHTML = '';
+            let depositHTML = '';
 
             let totalInvestSum = 0;
             let totalProfitSum = 0; 
@@ -244,6 +275,7 @@
 
             let allLuckyBoxLogs = [];
 
+            // 1. Kullanıcı Alt Öğelerini İşleme (Yatırım, Çekim, Kutu)
             users.forEach(user => {
                 if (user.luckyBoxHistory && user.luckyBoxHistory.length > 0) {
                     user.luckyBoxHistory.forEach(log => {
@@ -320,6 +352,35 @@
                 }
             });
 
+            // 2. ➕ ENTEGRASYON: Bakiye Taleplerini Tabloya Dökme
+            deposits.forEach(dep => {
+                let statusBadge = '';
+                let actionButtons = '';
+                
+                if (dep.status === 'Beklemede') {
+                    statusBadge = `<span class="bg-blue-500/10 text-blue-400 px-2 py-1 rounded text-xs">Beklemede</span>`;
+                    actionButtons = `
+                        <button onclick="approveDeposit('${dep._id}', ${dep.amount})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg uppercase transition-all active:scale-95">Onayla</button>
+                        <button onclick="rejectDeposit('${dep._id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg uppercase transition-all active:scale-95">Reddet</button>
+                    `;
+                } else if (dep.status === 'Onaylandı') {
+                    statusBadge = `<span class="bg-green-500/10 text-green-400 px-2 py-1 rounded text-xs">Onaylandı ✅</span>`;
+                    actionButtons = `<span class="text-xs text-gray-500 font-semibold italic">Tamamlandı</span>`;
+                } else {
+                    statusBadge = `<span class="bg-red-500/10 text-red-400 px-2 py-1 rounded text-xs">Reddedildi ❌</span>`;
+                    actionButtons = `<span class="text-xs text-gray-500 font-semibold italic">Reddedildi</span>`;
+                }
+
+                depositHTML += `
+                <tr class="text-gray-300">
+                    <td class="py-4 font-mono text-xs">${dep.telegramId}</td>
+                    <td class="py-4 text-blue-400 font-orbitron">$${Number(dep.amount).toFixed(2)}</td>
+                    <td class="py-4 text-xs text-gray-500">${new Date(dep.date).toLocaleString('tr-TR')}</td>
+                    <td class="py-4">${statusBadge}</td>
+                    <td class="py-4 text-right space-x-1">${actionButtons}</td>
+                </tr>`;
+            });
+
             allLuckyBoxLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
             const limitedLogs = allLuckyBoxLogs.slice(0, 50);
 
@@ -343,6 +404,7 @@
             document.getElementById('statTotalWithdraw').innerText = `$${totalWithdrawSum.toFixed(2)}`;
             document.getElementById('statTotalLuckyBoxWin').innerText = `$${totalLuckyBoxWinSum.toFixed(2)}`;
 
+            document.getElementById('depositRequestsTable').innerHTML = depositHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Bakiye Yükleme Talebi Bulunmuyor</td></tr>`;
             document.getElementById('luckyBoxRequestsTable').innerHTML = luckyBoxHTML || `<tr><td colspan="4" class="py-6 text-center text-xs text-gray-600 italic uppercase">Henüz Kutu Açma İşlemi Yok</td></tr>`;
             document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
             document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
@@ -355,6 +417,32 @@
             document.getElementById('gatePassword').value = "";
             document.getElementById('adminContent').classList.add('hidden');
             document.getElementById('loginGate').classList.remove('hidden');
+        }
+
+        // ➕ ENTEGRASYON: Admin panelinden gelen bakiye onaylama tetikleyicisi
+        async function approveDeposit(depositId, amount) {
+            if(!confirm(`Bu bakiye yükleme talebini onaylıyor musunuz?\nKullanıcı hesabına $${amount} eklenecektir.`)) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/deposit/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, depositId })
+                });
+                if(res.ok) { alert("Bakiye başarıyla onaylandı ve eklendi!"); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
+        }
+
+        // ➕ ENTEGRASYON: Admin panelinden gelen bakiye reddetme tetikleyicisi
+        async function rejectDeposit(depositId) {
+            if(!confirm("Bu bakiye yükleme talebini reddetmek istediğinize emin misiniz?")) return;
+            try {
+                const res = await fetch(`${API_URL}/admin/deposit/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, depositId })
+                });
+                if(res.ok) { alert("Talep reddedildi."); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         async function approveInvestment(telegramId, investId) {
