@@ -1,347 +1,583 @@
-const tg = window.Telegram.WebApp;
-const API_URL = 'https://elite-staking-v2.onrender.com/api';
-let currentPlan = null;
-let userData = null;
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Staking V2</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0b0f;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .nav-active {
+            color: #60a5fa;
+            border-top: 2px solid #3b82f6;
+        }
+        .spinning {
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .shake-box {
+            animation: shake 0.5s ease-in-out infinite;
+        }
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-2px, 1px) rotate(-3deg); }
+            40% { transform: translate(1px, -1px) rotate(3deg); }
+            60% { transform: translate(-1px, 2px) rotate(-1deg); }
+            80% { transform: translate(2px, 1px) rotate(2deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col justify-between pb-24">
 
-window.onload = () => {
-    tg.ready(); 
-    tg.expand();
-    // Telegram'dan veri alınamazsa fallback (test) kullanıcısı
-    const user = tg.initDataUnsafe?.user || { id: "1694656329", first_name: "Furkan" };
-    document.getElementById('uName').innerText = user.first_name.toUpperCase();
-    document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase();
-    syncUser(user);
-    setInterval(updateUIRuntime, 1000);
-};
+    <header class="p-4 bg-[#12121a] border-b border-gray-800/60 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <div id="uAvatar" class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white shadow-lg shadow-blue-500/20">U</div>
+            <div>
+                <h2 id="uName" class="text-xs font-bold tracking-wide text-gray-400">YÜKLENİYOR...</h2>
+                <p class="text-[10px] text-green-400 flex items-center gap-1 font-medium">● Sunucu Aktif</p>
+            </div>
+        </div>
+        <button id="refreshBtn" onclick="manualRefresh()" class="w-8 h-8 rounded-lg bg-gray-800/50 border border-gray-700/40 flex items-center justify-center text-gray-400 active:scale-95 transition-all">
+            🔄
+        </button>
+    </header>
 
-async function manualRefresh() {
-    const btn = document.getElementById('refreshBtn');
-    btn.classList.add('spinning');
-    const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-    await syncUser(user);
-    setTimeout(() => btn.classList.remove('spinning'), 800);
-}
+    <main class="flex-1 p-4 max-w-md mx-auto w-full space-y-4">
+        
+        <div class="bg-gradient-to-br from-[#161622] to-[#12121a] rounded-2xl p-5 border border-gray-800/50 shadow-xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl"></div>
+            <div class="grid grid-cols-2 gap-4 divide-x divide-gray-800/60">
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Serbest Bakiye</p>
+                    <h3 id="freeBalanceHeader" class="text-xl font-black font-orbitron text-gray-100 mt-1">$0.00</h3>
+                </div>
+                <div class="pl-4">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Kilitli Yatırım</p>
+                    <h3 id="investedBalanceHeader" class="text-xl font-black font-orbitron text-blue-400 mt-1">$0.00</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-800/40">
+                <button onclick="openDepositModal()" class="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-xs font-bold shadow-lg shadow-blue-600/10 border border-blue-500/20 transition-all text-center">Bakiye Yükle</button>
+                <button onclick="openWithdrawModal()" class="py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-98 text-xs font-bold border border-gray-700/40 transition-all text-center">Para Çek</button>
+            </div>
+        </div>
 
-async function syncUser(user) {
-    try {
-        const res = await fetch(`${API_URL}/sync`, { 
+        <div id="tab-home" class="tab-content active space-y-4">
+            
+            <div class="bg-gradient-to-r from-purple-950/40 to-indigo-950/40 rounded-2xl p-4 border border-purple-900/30 flex justify-between items-center">
+                <div class="space-y-1">
+                    <h4 class="text-xs font-black tracking-wide text-purple-300 uppercase">🎲 Şans Kutusu</h4>
+                    <p class="text-[10px] text-gray-400 leading-relaxed max-w-[200px]">Her açılış $5.00. Jackpot kazanma şansını yakala!</p>
+                </div>
+                <button onclick="switchTab('luckybox')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-[11px] font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95">Oyna</button>
+            </div>
+
+            <h3 class="text-xs font-black tracking-wider text-gray-400 uppercase pl-1">Yatırım Planları</h3>
+            
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-[#12121a] rounded-xl p-4 border border-gray-800/40 flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-200">7 Günlük Kilit</h4>
+                        <p class="text-[10px] text-gray-500 mt-0.5">Min Yatırım: $20</p>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div>
+                            <span class="text-xs font-black font-orbitron text-green-400">%5.0</span>
+                            <p class="text-[9px] text-gray-500">Toplam Kar</p>
+                        </div>
+                        <button onclick="openInvestModal(7, 5)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#12121a] rounded-xl p-4 border border-gray-800/40 flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-200">15 Günlük Kilit</h4>
+                        <p class="text-[10px] text-gray-500 mt-0.5">Min Yatırım: $20</p>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div>
+                            <span class="text-xs font-black font-orbitron text-green-400">%12.0</span>
+                            <p class="text-[9px] text-gray-500">Toplam Kar</p>
+                        </div>
+                        <button onclick="openInvestModal(15, 12)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                    </div>
+                </div>
+
+                <div class="bg-[#12121a] rounded-xl p-4 border border-gray-800/40 flex justify-between items-center">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-200">30 Günlük Kilit</h4>
+                        <p class="text-[10px] text-gray-500 mt-0.5">Min Yatırım: $20</p>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div>
+                            <span class="text-xs font-black font-orbitron text-green-400">%30.0</span>
+                            <p class="text-[9px] text-gray-500">Toplam Kar</p>
+                        </div>
+                        <button onclick="openInvestModal(30, 30)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-investments" class="tab-content space-y-3">
+            <h3 class="text-xs font-black tracking-wider text-gray-400 uppercase pl-1">Yatırımlarım</h3>
+            <div id="myInvestmentsList" class="space-y-3">
+                <div class="text-center text-gray-500 py-4 text-xs font-medium">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <div id="tab-luckybox" class="tab-content space-y-4">
+            <div class="bg-[#12121a] border border-purple-900/20 rounded-2xl p-6 text-center space-y-4 max-w-xs mx-auto">
+                <h3 class="text-sm font-black tracking-wider text-purple-400 font-orbitron uppercase">LUCKY BOX</h3>
+                
+                <div id="boxContainer" class="w-24 h-24 bg-gradient-to-br from-purple-600/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-inner shadow-purple-500/5 transition-all duration-300">
+                    🎁
+                </div>
+
+                <div id="boxResult" class="hidden min-h-[32px] bg-purple-950/20 border border-purple-900/30 rounded-lg p-1.5 flex items-center justify-center">
+                    <span id="resultValue" class="text-xs font-bold">---</span>
+                </div>
+
+                <button id="btnOpenBox" onclick="openLuckyBox()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all active:scale-98">
+                    Kutuyu Aç ($5.00)
+                </button>
+            </div>
+
+            <div class="bg-[#12121a] rounded-2xl p-4 border border-gray-800/40">
+                <h4 class="text-[11px] font-bold tracking-wider text-gray-400 uppercase mb-2">Kutu Geçmişi (Son 10)</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] text-gray-500 border-b border-gray-800/40">
+                                <th class="pb-1.5 font-bold">Sonuç</th>
+                                <th class="pb-1.5 font-bold">Ödül</th>
+                                <th class="pb-1.5 font-bold">Saat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="luckyBoxHistoryBody" class="divide-y divide-gray-800/20">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div id="step1" class="bg-[#12121a] border border-gray-800/80 rounded-2xl p-5 w-full max-w-xs space-y-4 relative">
+            <h3 class="text-xs font-black tracking-wide text-gray-300 uppercase">Yatırım Paketi</h3>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Yatırılacak Tutar (USDT)</label>
+                <input type="number" id="investAmount" placeholder="Min 20" class="w-full bg-[#161622] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold font-orbitron focus:outline-none focus:border-blue-500 transition-all text-white">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all">Kapat</button>
+                <button onclick="processInternalInvest()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="depositModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-[#12121a] border border-gray-800/80 rounded-2xl p-5 w-full max-w-xs space-y-4">
+            <h3 class="text-xs font-black tracking-wide text-gray-300 uppercase">Bakiye Yükleme Bildirimi</h3>
+            <p class="text-[10px] text-gray-400 leading-relaxed">Lütfen TRC20 cüzdanına transferinizi tamamladıktan sonra bildirmek istediğiniz tutarı girin.</p>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Tutar ($)</label>
+                <input type="number" id="depositAmountInput" placeholder="Örn: 100" class="w-full bg-[#161622] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold font-orbitron focus:outline-none focus:border-blue-500 transition-all text-white">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeDepositModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all">Kapat</button>
+                <button onclick="submitDeposit()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all">Bildir</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#12121a]/95 backdrop-blur-md border-t border-gray-800/60 p-2 z-40">
+        <div class="max-w-md mx-auto grid grid-cols-3 gap-1 text-center">
+            <button id="navHome" onclick="switchTab('home')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 nav-active transition-all">
+                <span class="text-sm">🏠</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Planlar</span>
+            </button>
+            <button id="navInvest" onclick="switchTab('investments')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all">
+                <span class="text-sm">💼</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">Yatırımlarım</span>
+            </button>
+            <button id="navBox" onclick="switchTab('luckybox')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all">
+                <span class="text-sm">🎲</span>
+                <span class="text-[9px] font-bold uppercase tracking-wider">LuckyBox</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+      const tg = window.Telegram.WebApp; 
+      const API_URL = 'https://elite-staking-v2.onrender.com/api'; 
+      let currentPlan = null; 
+      let userData = null; 
+
+      window.onload = () => { 
+        tg.ready(); 
+        tg.expand(); 
+        // Telegram'dan veri alınamazsa fallback (test) kullanıcısı 
+        const user = tg.initDataUnsafe?.user || { id: "1694656329", first_name: "Furkan" }; 
+        document.getElementById('uName').innerText = user.first_name.toUpperCase(); 
+        document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase(); 
+        syncUser(user); 
+        setInterval(updateUIRuntime, 1000); 
+      }; 
+
+      async function manualRefresh() { 
+        const btn = document.getElementById('refreshBtn'); 
+        btn.classList.add('spinning'); 
+        const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+        await syncUser(user); 
+        setTimeout(() => btn.classList.remove('spinning'), 800); 
+      } 
+
+      async function syncUser(user) { 
+        try { 
+          const res = await fetch(`${API_URL}/sync`, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ telegramId: user.id.toString(), name: user.first_name }) 
-        });
-        if (!res.ok) throw new Error("Sync başarısız");
-        userData = await res.json();
-        
-        const freeBal = Number(userData.balance || 0);
-        let invBal = 0;
-        if (userData.investments) {
-            userData.investments.forEach(i => { if(i.status === 'Aktif') invBal += Number(i.amount || 0); });
-        }
-        
-        document.getElementById('freeBalanceHeader').innerText = `$${freeBal.toFixed(2)}`;
-        document.getElementById('investedBalanceHeader').innerText = `$${invBal.toFixed(2)}`;
-        
-        renderInvestments();
-        renderLuckyBoxHistory(userData.luckyBoxHistory || []);
-    } catch(e) { 
-        console.error("Sync Error:", e); 
-    }
-}
+          }); 
+          if (!res.ok) throw new Error("Sync başarısız"); 
+          userData = await res.json(); 
+          const freeBal = Number(userData.balance || 0); 
+          let invBal = 0; 
+          if (userData.investments) { 
+            userData.investments.forEach(i => { 
+              if(i.status === 'Aktif') invBal += Number(i.amount || 0); 
+            }); 
+          } 
+          document.getElementById('freeBalanceHeader').innerText = `$${freeBal.toFixed(2)}`; 
+          document.getElementById('investedBalanceHeader').innerText = `$${invBal.toFixed(2)}`; 
+          renderInvestments(); 
+          renderLuckyBoxHistory(userData.luckyBoxHistory || []); 
+        } catch(e) { 
+          console.error("Sync Error:", e); 
+        } 
+      } 
 
-async function processInternalInvest() {
-    const val = document.getElementById('investAmount').value;
-    if(!val || val < 20) return alert("Minimum yatırım miktarı 20 USDT'dir.");
-    if(Number(val) > Number(userData.balance || 0)) return alert("Yetersiz Serbest Bakiye! Lütfen önce bakiye yükleyin.");
-
-    const amount = Number(val);
-    const totalProfit = amount * (currentPlan.rate / 100);
-
-    try {
-        const res = await fetch(`${API_URL}/invest`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                telegramId: userData.telegramId.toString(),
-                planDays: currentPlan.days,
-                amount: amount,
-                profit: totalProfit // Backend modelinde net kar olarak eşleşmeli
-            })
-        });
-
-        if(res.ok) {
-            closeModal();
-            alert("🚀 Yatırım paketiniz serbest bakiyenizden düşülerek başarıyla başlatıldı! Admin onayından sonra aktifleşecektir.");
-            const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-            await syncUser(user);
-            switchTab('investments');
-        } else {
-            alert("Yatırım işlemi başlatılamadı.");
-        }
-    } catch(e) { alert("Bağlantı hatası oluştu."); }
-}
-
-// 🎲 GÜVENLİK UYARISI: backend tarafını da sadece istek atacak şekilde revize etmelisin!
-async function openLuckyBox() {
-    const currentFreeBal = Number(userData.balance || 0);
-    if (currentFreeBal < 5.00) {
-        alert("Kutu açmak için serbest bakiyenizde en az $5.00 bulunmalıdır.");
-        return;
-    }
-
-    const btn = document.getElementById('btnOpenBox');
-    const box = document.getElementById('boxContainer');
-    const resultDiv = document.getElementById('boxResult');
-    const resValue = document.getElementById('resultValue');
-
-    btn.disabled = true;
-    btn.innerText = "Kutu Sallanıyor...";
-    box.classList.add('shake-box');
-    box.innerText = "🎁";
-    resultDiv.classList.add('hidden');
-
-    // Optimizasyon: Ön yüzde geçici bakiye düşüşü (UX için)
-    document.getElementById('freeBalanceHeader').innerText = `$${(currentFreeBal - 5).toFixed(2)}`;
-
-    // GÜVENLİ YAPI ÖNERİSİ: Backend'e sadece 'play' isteği atılır, rastgelelik backend'de döner.
-    // Şimdilik mevcut backend yapını bozmamak adına mantığı korudum ancak backend'e taşımalısın.
-    const rand = Math.random() * 100;
-    let finalReward = { type: 'LOSE', amount: 0.00 };
-
-    if (rand < 55) { finalReward = { type: 'AMORTI', amount: 1.00 }; } 
-    else if (rand < 88) { finalReward = { type: 'LOSE', amount: 0.00 }; } 
-    else if (rand < 99) { finalReward = { type: 'WIN', amount: 10.00 }; } 
-    else { finalReward = { type: 'JACKPOT', amount: 50.00 }; }
-
-    setTimeout(async () => {
-        try {
-            const response = await fetch(`${API_URL}/luckybox/play`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    telegramId: userData.telegramId.toString(),
-                    resultType: finalReward.type,
-                    wonAmount: finalReward.amount
-                })
-            });
-
-            box.classList.remove('shake-box');
-
-            if (response.ok) {
-                box.innerText = finalReward.amount > 0 ? "🔓" : "💨";
-                resultDiv.classList.remove('hidden');
-                
-                if (finalReward.type === 'LOSE') {
-                    resValue.innerText = "BOŞ ÇIKTI!";
-                    resValue.className = "text-[11px] font-bold text-gray-500";
-                } else {
-                    resValue.innerText = `${finalReward.type} (+$${finalReward.amount})`;
-                    if(finalReward.type === 'JACKPOT') resValue.className = "text-[11px] font-black font-orbitron text-yellow-400 animate-pulse";
-                    else if(finalReward.type === 'WIN') resValue.className = "text-[11px] font-black font-orbitron text-green-400";
-                    else resValue.className = "text-[11px] font-black font-orbitron text-blue-400";
-                }
-
-                const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-                await syncUser(user);
-            } else {
-                box.innerText = "❌";
-                alert("İşlem kaydedilemedi.");
-                const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-                await syncUser(user); // Bakiyeyi eşitlemek için tekrar sync
-            }
-        } catch (error) {
-            box.classList.remove('shake-box');
-            box.innerText = "⚠️";
-            alert("Sistem bağlantı hatası.");
-            const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-            await syncUser(user);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Kutuyu Aç ($5.00)";
-        }
-    }, 1200);
-}
-
-function openDepositModal() { 
-    document.getElementById('depositModal').classList.remove('hidden'); 
-    document.getElementById('depositModal').classList.add('flex'); 
-}
-function closeDepositModal() { 
-    document.getElementById('depositModal').classList.remove('flex'); 
-    document.getElementById('depositModal').classList.add('hidden'); 
-}
-
-async function submitDeposit() {
-    const amount = Number(document.getElementById('depositAmountInput').value);
-    if(!amount || amount <= 0) return alert("Lütfen geçerli bir tutar girin.");
-
-    try {
-        const res = await fetch(`${API_URL}/deposit`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegramId: userData.telegramId.toString(), amount })
-        });
-        if(res.ok) {
-            alert("✅ Yükleme bildiriminiz bota iletildi. Admin onayından sonra serbest bakiyenize eklenecektir.");
-            closeDepositModal();
-        } else { alert("Talebiniz iletilemedi."); }
-    } catch(e) { alert("Bağlantı hatası."); }
-}
-
-async function openWithdrawModal() {
-    const currentFree = Number(userData.balance || 0);
-    const amountInput = prompt(`Çekmek istediğiniz tutarı girin ($):\n(Mevcut Serbest Bakiye: $${currentFree.toFixed(2)})`);
-    if(!amountInput || isNaN(amountInput) || Number(amountInput) <= 0) return;
-    if(Number(amountInput) > currentFree) return alert("Serbest bakiyenizden daha yüksek bir tutar çekemezsiniz.");
-    
-    const walletInput = prompt("USDT TRC20 Cüzdan Adresiniz:");
-    if(!walletInput || walletInput.trim() === "") return alert("Cüzdan adresi girmek zorunludur.");
-
-    try {
-        const res = await fetch(`${API_URL}/withdraw`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                telegramId: userData.telegramId.toString(),
-                amount: Number(amountInput),
-                wallet: walletInput.trim()
-            })
-        });
-        if(res.ok) {
-            alert("🚨 Para çekme talebi alındı, serbest bakiyenizden düşüldü. İşlem admin kontrolündedir.");
-            const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-            await syncUser(user);
-        } else { alert("Çekim talebi başarısız."); }
-    } catch(e) { alert("Bağlantı hatası yaşandı."); }
-}
-
-async function cancelInvest(id) {
-    const walletInput = prompt("İade için TRC20 cüzdan adresinizi girin:\n(Not: %2 işlem kesintisi uygulanır)");
-    if (!walletInput || walletInput.trim() === "") return alert("Cüzdan adresi gereklidir.");
-
-    try {
-        const res = await fetch(`${API_URL}/invest/cancel-request`, { 
+      async function processInternalInvest() { 
+        const val = document.getElementById('investAmount').value; 
+        if(!val || val < 20) return alert("Minimum yatırım miktarı 20 USDT'dir."); 
+        if(Number(val) > Number(userData.balance || 0)) return alert("Yetersiz Serbest Bakiye! Lütfen önce bakiye yükleyin."); 
+        const amount = Number(val); 
+        const totalProfit = amount * (currentPlan.rate / 100); 
+        try { 
+          const res = await fetch(`${API_URL}/invest`, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify({ 
-                telegramId: userData.telegramId.toString(), 
-                investId: id,
-                returnWallet: walletInput.trim()
+              telegramId: userData.telegramId.toString(), 
+              planDays: currentPlan.days, 
+              amount: amount, 
+              profit: totalProfit 
             }) 
-        });
-        if(res.ok) {
-            alert("İptal talebi yöneticiye iletildi.");
-            const user = tg.initDataUnsafe?.user || { id: "1694656329" };
-            await syncUser(user);
-        }
-    } catch (e) { alert("Bağlantı hatası."); }
-}
+          }); 
+          if(res.ok) { 
+            closeModal(); 
+            alert("🚀 Yatırım paketiniz serbest bakiyenizden düşülerek başarıyla başlatıldı! Admin onayından sonra aktifleşecektir."); 
+            const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+            await syncUser(user); 
+            switchTab('investments'); 
+          } else { 
+            alert("Yatırım işlem başlatılamadı."); 
+          } 
+        } catch(e) { 
+          alert("Bağlantı hatası oluştu."); 
+        } 
+      } 
 
-function renderInvestments() {
-    const list = document.getElementById('myInvestmentsList');
-    if(!userData.investments || !userData.investments.length) { 
-        list.innerHTML = '<p class="text-center text-gray-600 mt-10 text-[10px] italic uppercase">Yatırım Yok</p>'; 
-        return; 
-    }
-
-    const statusColors = { 'Aktif': 'text-green-400', 'İptal Bekliyor': 'text-orange-500', 'İptal Edildi': 'text-red-500', 'Onay Bekliyor': 'text-yellow-500' };
-
-    list.innerHTML = userData.investments.map(inv => {
-        const colorClass = statusColors[inv.status] || 'text-gray-400';
-        const isAktif = inv.status === 'Aktif';
-        const safeProfit = Number(inv.profit || inv.totalProfit || 0); // Olası isimlendirme çakışması önlemi
-        return `
-        <div class="glass-card p-5 border-l-2 border-white/10">
-            <div class="flex justify-between items-center mb-3 text-[9px] font-black uppercase">
-                <span class="text-gray-500">${inv.planDays} GÜN VADE</span>
-                <span class="${colorClass}">${inv.status}</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <div><p class="text-[7px] text-gray-500 uppercase">Anapara</p><p class="text-[10px] font-bold">$${Number(inv.amount).toFixed(2)}</p></div>
-                <div><p class="text-[7px] text-gray-500 uppercase">Anlık Kar</p><p class="text-[10px] font-bold text-green-400" id="profit-${inv._id}">$0.0000</p></div>
-                <div><p class="text-[7px] text-blue-400 uppercase">Vade Sonu</p><p class="text-[10px] font-bold text-white">$${(Number(inv.amount) + safeProfit).toFixed(2)}</p></div>
-            </div>
-            <p class="text-[10px] font-mono mb-4 text-center text-blue-400 tracking-widest" id="timer-${inv._id}">--:--:--</p>
-            <div class="flex gap-2">
-                <button onclick="cancelInvest('${inv._id}')" ${!isAktif ? 'disabled' : ''} class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-lg text-[8px] font-black uppercase disabled:opacity-20">İptal Talebi</button>
-            </div>
-        </div>`;
-    }).reverse().join('');
-}
-
-function renderLuckyBoxHistory(history) {
-    const tbody = document.getElementById('luckyBoxHistoryBody');
-    if (!history || history.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="py-3 text-center text-gray-600 italic uppercase">Geçmiş temiz</td></tr>`;
-        return;
-    }
-    let html = '';
-    [...history].reverse().slice(0, 10).forEach(log => {
-        let color = "text-gray-500";
-        if(log.resultType === 'WIN') color = "text-green-400 font-bold";
-        if(log.resultType === 'JACKPOT') color = "text-yellow-400 font-black animate-pulse";
-        if(log.resultType === 'AMORTI') color = "text-blue-400";
+      async function openLuckyBox() { 
+        const currentFreeBal = Number(userData.balance || 0); 
+        if (currentFreeBal < 5.00) { 
+          alert("Kutu açmak için serbest bakiyenizde en az $5.00 bulunmalıdır."); 
+          return; 
+        } 
+        const btn = document.getElementById('btnOpenBox'); 
+        const box = document.getElementById('boxContainer'); 
+        const resultDiv = document.getElementById('boxResult'); 
+        const resValue = document.getElementById('resultValue'); 
+        btn.disabled = true; 
+        btn.innerText = "Kutu Sallanıyor..."; 
+        box.classList.add('shake-box'); 
+        box.innerText = "🎁"; 
+        resultDiv.classList.add('hidden'); 
         
-        html += `
-        <tr class="border-b border-white/5">
-            <td class="py-2 uppercase font-bold ${color}">${log.resultType === 'LOSE' ? 'BOŞ' : log.resultType}</td>
-            <td class="py-2 text-purple-400 font-mono">$${Number(log.wonAmount).toFixed(2)}</td>
-            <td class="py-2 text-right text-gray-500">${log.date ? new Date(log.date).toLocaleTimeString('tr-TR') : '---'}</td>
-        </tr>`;
-    });
-    tbody.innerHTML = html;
-}
+        document.getElementById('freeBalanceHeader').innerText = `$${(currentFreeBal - 5).toFixed(2)}`; 
 
-function updateUIRuntime() {
-    if(!userData || !userData.investments) return;
-    userData.investments.forEach(inv => {
-        if(inv.status === 'Aktif') {
-            const startTime = new Date(inv.createdAt).getTime();
-            const duration = inv.planDays * 24 * 60 * 60 * 1000;
-            const now = Date.now();
-            const diff = (startTime + duration) - now;
-            const timerEl = document.getElementById(`timer-${inv._id}`);
-            const profitEl = document.getElementById(`profit-${inv._id}`);
+        const rand = Math.random() * 100; 
+        let finalReward = { type: 'LOSE', amount: 0.00 }; 
+        if (rand < 55) { 
+          finalReward = { type: 'AMORTI', amount: 1.00 }; 
+        } else if (rand < 88) { 
+          finalReward = { type: 'LOSE', amount: 0.00 }; 
+        } else if (rand < 99) { 
+          finalReward = { type: 'WIN', amount: 10.00 }; 
+        } else { 
+          finalReward = { type: 'JACKPOT', amount: 50.00 }; 
+        } 
 
-            const safeProfit = Number(inv.profit || inv.totalProfit || 0);
+        setTimeout(async () => { 
+          try { 
+            const response = await fetch(`${API_URL}/luckybox/play`, { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ 
+                telegramId: userData.telegramId.toString(), 
+                resultType: finalReward.type, 
+                wonAmount: finalReward.amount 
+              }) 
+            }); 
+            box.classList.remove('shake-box'); 
+            if (response.ok) { 
+              box.innerText = finalReward.amount > 0 ? "🔓" : "💨"; 
+              resultDiv.classList.remove('hidden'); 
+              if (finalReward.type === 'LOSE') { 
+                resValue.innerText = "BOŞ ÇIKTI!"; 
+                resValue.className = "text-[11px] font-bold text-gray-500"; 
+              } else { 
+                resValue.innerText = `${finalReward.type} (+$${finalReward.amount})`; 
+                if(finalReward.type === 'JACKPOT') resValue.className = "text-[11px] font-black font-orbitron text-yellow-400 animate-pulse"; 
+                else if(finalReward.type === 'WIN') resValue.className = "text-[11px] font-black font-orbitron text-green-400"; 
+                else resValue.className = "text-[11px] font-black font-orbitron text-blue-400"; 
+              } 
+              const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+              await syncUser(user); 
+            } else { 
+              box.innerText = "❌"; 
+              alert("İşlem kaydedilemedi."); 
+              const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+              await syncUser(user); 
+            } 
+          } catch (error) { 
+            box.classList.remove('shake-box'); 
+            box.innerText = "⚠️"; 
+            alert("Sistem bağlantı hatası."); 
+            const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+            await syncUser(user); 
+          } finally { 
+            btn.disabled = false; 
+            btn.innerText = "Kutuyu Aç ($5.00)"; 
+          } 
+        }, 1200); 
+      } 
 
-            if(diff > 0) {
-                const d = Math.floor(diff / 86400000);
-                const h = Math.floor((diff % 86400000) / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}m ${s}s`;
-                
-                const progress = (now - startTime) / duration;
-                const currentProfit = safeProfit * progress;
-                if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(4)}`;
-            } else {
-                if(timerEl) timerEl.innerText = "VADE DOLDU";
-                if(profitEl) profitEl.innerText = `$${safeProfit.toFixed(2)}`;
-            }
-        }
-    });
-}
+      function openDepositModal() { 
+        document.getElementById('depositModal').classList.remove('hidden'); 
+        document.getElementById('depositModal').classList.add('flex'); 
+      } 
 
-function openInvestModal(days, rate) { 
-    currentPlan = { days, rate }; 
-    // Modal içindeki başlığı dinamik güncelleme (UX Geliştirmesi)
-    const titleEl = document.querySelector('#step1 h3');
-    if(titleEl) titleEl.innerText = `${days} Günlük Yatırım Paketi (%${rate})`;
-    
-    document.getElementById('step1').classList.remove('hidden'); 
-    document.getElementById('modal').classList.remove('hidden');
-    document.getElementById('modal').classList.add('flex'); 
-}
+      function closeDepositModal() { 
+        document.getElementById('depositModal').classList.remove('flex'); 
+        document.getElementById('depositModal').classList.add('hidden'); 
+      } 
 
-function closeModal() { 
-    document.getElementById('modal').classList.remove('flex'); 
-    document.getElementById('modal').classList.add('hidden'); 
-}
+      async function submitDeposit() { 
+        const amount = Number(document.getElementById('depositAmountInput').value); 
+        if(!amount || amount <= 0) return alert("Lütfen geçerli bir tutar girin."); 
+        try { 
+          const res = await fetch(`${API_URL}/deposit`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ telegramId: userData.telegramId.toString(), amount }) 
+          }); 
+          if(res.ok) { 
+            alert("✅ Yükleme bildiriminiz bota iletildi. Admin onayından sonra serbest bakiyenize eklenecektir."); 
+            closeDepositModal(); 
+          } else { 
+            alert("Talebiniz iletilemedi."); 
+          } 
+        } catch(e) { 
+          alert("Bağlantı hatası."); 
+        } 
+      } 
 
+      async function openWithdrawModal() { 
+        const currentFree = Number(userData.balance || 0); 
+        const amountInput = prompt(`Çekmek istediğiniz tutarı girin ($):\n(Mevcut Serbest Bakiye: $${currentFree.toFixed(2)})`); 
+        if(!amountInput || isNaN(amountInput) || Number(amountInput) <= 0) return; 
+        if(Number(amountInput) > currentFree) return alert("Serbest bakiyenizden daha yüksek bir tutar çekemezsiniz."); 
+        const walletInput = prompt("USDT TRC20 Cüzdan Adresiniz:"); 
+        if(!walletInput || walletInput.trim() === "") return alert("Cüzdan adresi girmek zorunludur."); 
+        try { 
+          const res = await fetch(`${API_URL}/withdraw`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ telegramId: userData.telegramId.toString(), amount: Number(amountInput), wallet: walletInput.trim() }) 
+          }); 
+          if(res.ok) { 
+            alert("🚨 Para çekme talebi alındı, serbest bakiyenizden düşüldü. İşlem admin kontrolündedir."); 
+            const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+            await syncUser(user); 
+          } else { 
+            alert("Çekim talebi başarısız."); 
+          } 
+        } catch(e) { 
+          alert("Bağlantı hatası yaşandı."); 
+        } 
+      } 
 
-function switchTab(t) { 
-    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
-    document.getElementById('tab-'+t).classList.add('active'); 
-    document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
-    document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
-}
+      async function cancelInvest(id) { 
+        const walletInput = prompt("İade için TRC20 cüzdan adresinizi girin:\n(Not: %2 işlem kesintisi uygulanır)"); 
+        if (!walletInput || walletInput.trim() === "") return alert("Cüzdan adresi gereklidir."); 
+        try { 
+          const res = await fetch(`${API_URL}/invest/cancel-request`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ telegramId: userData.telegramId.toString(), investId: id, returnWallet: walletInput.trim() }) 
+          }); 
+          if(res.ok) { 
+            alert("İptal talebi yöneticiye iletildi."); 
+            const user = tg.initDataUnsafe?.user || { id: "1694656329" }; 
+            await syncUser(user); 
+          } 
+        } catch (e) { 
+          alert("Bağlantı hatası."); 
+        } 
+      } 
+
+      function renderInvestments() { 
+        const list = document.getElementById('myInvestmentsList'); 
+        if(!userData.investments || !userData.investments.length) { 
+          list.innerHTML = '<div class="text-center text-gray-500 py-4 text-xs font-medium">Yatırım Yok</div>'; 
+          return; 
+        } 
+        const statusColors = { 
+          'Aktif': 'text-green-400', 
+          'İptal Bekliyor': 'text-orange-500', 
+          'İptal Edildi': 'text-red-500', 
+          'Onay Bekliyor': 'text-yellow-500' 
+        }; 
+        list.innerHTML = userData.investments.map(inv => { 
+          const colorClass = statusColors[inv.status] || 'text-gray-400'; 
+          const isAktif = inv.status === 'Aktif'; 
+          const safeProfit = Number(inv.profit || inv.totalProfit || 0); 
+          return ` 
+            <div class="bg-[#1a1a24] rounded-xl p-4 border border-gray-800/40 relative overflow-hidden flex flex-col gap-3"> 
+              <div class="flex justify-between items-center border-b border-gray-800/40 pb-2"> 
+                <span class="text-[11px] font-bold tracking-wider text-gray-400">${inv.planDays} GÜN VADE</span> 
+                <span class="text-[11px] font-bold ${colorClass}">${inv.status}</span> 
+              </div> 
+              <div class="grid grid-cols-3 gap-2 text-center"> 
+                <div> 
+                  <p class="text-[10px] text-gray-500 font-medium">Anapara</p> 
+                  <p class="text-xs font-bold font-orbitron text-gray-200">$${Number(inv.amount).toFixed(2)}</p> 
+                </div> 
+                <div> 
+                  <p class="text-[10px] text-gray-500 font-medium">Anlık Kar</p> 
+                  <p id="profit-${inv._id}" class="text-xs font-bold font-orbitron text-green-400">$0.0000</p> 
+                </div> 
+                <div> 
+                  <p class="text-[10px] text-gray-500 font-medium">Vade Sonu</p> 
+                  <p class="text-xs font-bold font-orbitron text-gray-200">$${(Number(inv.amount) + safeProfit).toFixed(2)}</p> 
+                </div> 
+              </div> 
+              <div class="flex justify-between items-center pt-1"> 
+                <span id="timer-${inv._id}" class="text-[11px] font-bold font-orbitron text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded-md border border-blue-500/10">--:--:--</span> 
+                ${isAktif ? `<button onclick="cancelInvest('${inv._id}')" class="text-[10px] font-bold text-red-400 hover:text-red-300 bg-red-500/5 px-2 py-1 rounded-md border border-red-500/10 transition-all">İptal Talebi</button>` : ''} 
+              </div> 
+            </div> 
+          `; 
+        }).reverse().join(''); 
+      } 
+
+      function renderLuckyBoxHistory(history) { 
+        const tbody = document.getElementById('luckyBoxHistoryBody'); 
+        if (!history || history.length === 0) { 
+          tbody.innerHTML = `<tr class="text-center text-gray-500"><td colspan="3" class="py-2 text-xs">Geçmiş temiz</td></tr>`; 
+          return; 
+        } 
+        let html = ''; 
+        [...history].reverse().slice(0, 10).forEach(log => { 
+          let color = "text-gray-500"; 
+          if(log.resultType === 'WIN') color = "text-green-400 font-bold"; 
+          if(log.resultType === 'JACKPOT') color = "text-yellow-400 font-black animate-pulse"; 
+          if(log.resultType === 'AMORTI') color = "text-blue-400"; 
+          html += ` 
+            <tr class="border-b border-gray-800/30 text-xs"> 
+              <td class="py-2 font-medium ${color}">${log.resultType === 'LOSE' ? 'BOŞ' : log.resultType}</td> 
+              <td class="py-2 font-bold text-gray-300">$${Number(log.wonAmount).toFixed(2)}</td> 
+              <td class="py-2 text-gray-500">${log.date ? new Date(log.date).toLocaleTimeString('tr-TR') : '---'}</td> 
+            </tr> 
+          `; 
+        }); 
+        tbody.innerHTML = html; 
+      } 
+
+      function updateUIRuntime() { 
+        if(!userData || !userData.investments) return; 
+        userData.investments.forEach(inv => { 
+          if(inv.status === 'Aktif') { 
+            const startTime = new Date(inv.createdAt).getTime(); 
+            const duration = inv.planDays * 24 * 60 * 60 * 1000; 
+            const now = Date.now(); 
+            const diff = (startTime + duration) - now; 
+            const timerEl = document.getElementById(`timer-${inv._id}`); 
+            const profitEl = document.getElementById(`profit-${inv._id}`); 
+            const safeProfit = Number(inv.profit || inv.totalProfit || 0); 
+            if(diff > 0) { 
+              const d = Math.floor(diff / 86400000); 
+              const h = Math.floor((diff % 86400000) / 3600000); 
+              const m = Math.floor((diff % 3600000) / 60000); 
+              const s = Math.floor((diff % 60000) / 1000); 
+              if(timerEl) timerEl.innerText = `${d}g ${h}s ${m}m ${s}s`; 
+              const progress = (now - startTime) / duration; 
+              const currentProfit = safeProfit * progress; 
+              if(profitEl) profitEl.innerText = `$${currentProfit.toFixed(4)}`; 
+            } else { 
+              if(timerEl) timerEl.innerText = "VADE DOLDU"; 
+              if(profitEl) profitEl.innerText = `$${safeProfit.toFixed(2)}`; 
+            } 
+          } 
+        }); 
+      } 
+
+      function openInvestModal(days, rate) { 
+        currentPlan = { days, rate }; 
+        const titleEl = document.querySelector('#step1 h3'); 
+        if(titleEl) titleEl.innerText = `${days} Günlük Yatırım Paketi (%${rate})`; 
+        document.getElementById('step1').classList.remove('hidden'); 
+        document.getElementById('modal').classList.remove('hidden'); 
+        document.getElementById('modal').classList.add('flex'); 
+      } 
+
+      function closeModal() { 
+        document.getElementById('modal').classList.remove('flex'); 
+        document.getElementById('modal').classList.add('hidden'); 
+      } 
+
+      function switchTab(t) { 
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); 
+        document.getElementById('tab-'+t).classList.add('active'); 
+        document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
+        document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
+      } 
+    </script>
+</body>
+</html>
