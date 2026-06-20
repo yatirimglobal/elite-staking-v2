@@ -80,19 +80,18 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-800/40">
-                <button onclick="openDepositModal()" class="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-xs font-bold shadow-lg shadow-blue-600/10 border border-blue-500/20 transition-all text-center">Bakiye Yükle</button>
-                <button onclick="openWithdrawModal()" class="py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-98 text-xs font-bold border border-gray-700/40 transition-all text-center">Para Çek</button>
+                <button onclick="openDepositModal()" class="py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-xs font-bold shadow-lg shadow-blue-600/10 border border-blue-500/20 transition-all text-center cursor-pointer">Bakiye Yükle</button>
+                <button onclick="openWithdrawModal()" class="py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-98 text-xs font-bold border border-gray-700/40 transition-all text-center cursor-pointer">Para Çek</button>
             </div>
         </div>
 
         <div id="tab-home" class="tab-content active space-y-4">
-            
             <div class="bg-gradient-to-r from-purple-950/40 to-indigo-950/40 rounded-2xl p-4 border border-purple-900/30 flex justify-between items-center">
                 <div class="space-y-1">
                     <h4 class="text-xs font-black tracking-wide text-purple-300 uppercase">🎲 Şans Kutusu</h4>
                     <p class="text-[10px] text-gray-400 leading-relaxed max-w-[200px]">Her açılış $5.00. Jackpot kazanma şansını yakala!</p>
                 </div>
-                <button onclick="switchTab('luckybox')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-[11px] font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95">Oyna</button>
+                <button onclick="switchTab('luckybox')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl text-[11px] font-bold shadow-lg shadow-indigo-600/20 transition-all active:scale-95 cursor-pointer">Oyna</button>
             </div>
 
             <h3 class="text-xs font-black tracking-wider text-gray-400 uppercase pl-1">Yatırım Planları</h3>
@@ -108,7 +107,7 @@
                             <span class="text-xs font-black font-orbitron text-green-400">%5.0</span>
                             <p class="text-[9px] text-gray-500">Toplam Kar</p>
                         </div>
-                        <button onclick="openInvestModal(7, 5)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                        <button onclick="openInvestModal(7, 5)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer">Seç</button>
                     </div>
                 </div>
 
@@ -122,7 +121,7 @@
                             <span class="text-xs font-black font-orbitron text-green-400">%12.0</span>
                             <p class="text-[9px] text-gray-500">Toplam Kar</p>
                         </div>
-                        <button onclick="openInvestModal(15, 12)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                        <button onclick="openInvestModal(15, 12)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer">Seç</button>
                     </div>
                 </div>
 
@@ -136,7 +135,7 @@
                             <span class="text-xs font-black font-orbitron text-green-400">%30.0</span>
                             <p class="text-[9px] text-gray-500">Toplam Kar</p>
                         </div>
-                        <button onclick="openInvestModal(30, 30)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all">Seç</button>
+                        <button onclick="openInvestModal(30, 30)" class="px-3 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer">Seç</button>
                     </div>
                 </div>
             </div>
@@ -161,7 +160,7 @@
                     <span id="resultValue" class="text-xs font-bold">---</span>
                 </div>
 
-                <button id="btnOpenBox" onclick="openLuckyBox()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all active:scale-98">
+                <button id="btnOpenBox" onclick="openLuckyBox()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all active:scale-98 cursor-pointer">
                     Kutuyu Aç ($5.00)
                 </button>
             </div>
@@ -178,7 +177,7 @@
                             </tr>
                         </thead>
                         <tbody id="luckyBoxHistoryBody" class="divide-y divide-gray-800/20">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -194,8 +193,8 @@
                 <input type="number" id="investAmount" placeholder="Min 20" class="w-full bg-[#161622] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold font-orbitron focus:outline-none focus:border-blue-500 transition-all text-white">
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="closeModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all">Kapat</button>
-                <button onclick="processInternalInvest()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all">Onayla</button>
+                <button onclick="closeModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all cursor-pointer">Kapat</button>
+                <button onclick="processInternalInvest()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all cursor-pointer">Onayla</button>
             </div>
         </div>
     </div>
@@ -209,23 +208,23 @@
                 <input type="number" id="depositAmountInput" placeholder="Örn: 100" class="w-full bg-[#161622] border border-gray-800 rounded-xl px-3 py-2 text-sm font-bold font-orbitron focus:outline-none focus:border-blue-500 transition-all text-white">
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="closeDepositModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all">Kapat</button>
-                <button onclick="submitDeposit()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all">Bildir</button>
+                <button onclick="closeDepositModal()" class="flex-1 py-2 rounded-xl bg-gray-800 border border-gray-700/40 text-xs font-bold text-gray-400 active:scale-95 transition-all cursor-pointer">Kapat</button>
+                <button onclick="submitDeposit()" class="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/10 active:scale-95 transition-all cursor-pointer">Bildir</button>
             </div>
         </div>
     </div>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-[#12121a]/95 backdrop-blur-md border-t border-gray-800/60 p-2 z-40">
         <div class="max-w-md mx-auto grid grid-cols-3 gap-1 text-center">
-            <button id="navHome" onclick="switchTab('home')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 nav-active transition-all">
+            <button id="navHome" onclick="switchTab('home')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 nav-active transition-all cursor-pointer">
                 <span class="text-sm">🏠</span>
                 <span class="text-[9px] font-bold uppercase tracking-wider">Planlar</span>
             </button>
-            <button id="navInvest" onclick="switchTab('investments')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all">
+            <button id="navInvest" onclick="switchTab('investments')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all cursor-pointer">
                 <span class="text-sm">💼</span>
                 <span class="text-[9px] font-bold uppercase tracking-wider">Yatırımlarım</span>
             </button>
-            <button id="navBox" onclick="switchTab('luckybox')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all">
+            <button id="navBox" onclick="switchTab('luckybox')" class="flex flex-col items-center gap-1 py-1.5 text-gray-500 transition-all cursor-pointer">
                 <span class="text-sm">🎲</span>
                 <span class="text-[9px] font-bold uppercase tracking-wider">LuckyBox</span>
             </button>
@@ -241,7 +240,6 @@
       window.onload = () => { 
         tg.ready(); 
         tg.expand(); 
-        // Telegram'dan veri alınamazsa fallback (test) kullanıcısı 
         const user = tg.initDataUnsafe?.user || { id: "1694656329", first_name: "Furkan" }; 
         document.getElementById('uName').innerText = user.first_name.toUpperCase(); 
         document.getElementById('uAvatar').innerText = user.first_name.charAt(0).toUpperCase(); 
@@ -500,7 +498,7 @@
               </div> 
               <div class="flex justify-between items-center pt-1"> 
                 <span id="timer-${inv._id}" class="text-[11px] font-bold font-orbitron text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded-md border border-blue-500/10">--:--:--</span> 
-                ${isAktif ? `<button onclick="cancelInvest('${inv._id}')" class="text-[10px] font-bold text-red-400 hover:text-red-300 bg-red-500/5 px-2 py-1 rounded-md border border-red-500/10 transition-all">İptal Talebi</button>` : ''} 
+                ${isAktif ? `<button onclick="cancelInvest('${inv._id}')" class="text-[10px] font-bold text-red-400 hover:text-red-300 bg-red-500/5 px-2 py-1 rounded-md border border-red-500/10 transition-all cursor-pointer">İptal Talebi</button>` : ''} 
               </div> 
             </div> 
           `; 
@@ -562,7 +560,6 @@
         currentPlan = { days, rate }; 
         const titleEl = document.querySelector('#step1 h3'); 
         if(titleEl) titleEl.innerText = `${days} Günlük Yatırım Paketi (%${rate})`; 
-        document.getElementById('step1').classList.remove('hidden'); 
         document.getElementById('modal').classList.remove('hidden'); 
         document.getElementById('modal').classList.add('flex'); 
       } 
@@ -577,6 +574,7 @@
         document.getElementById('tab-'+t).classList.add('active'); 
         document.getElementById('navHome').classList.toggle('nav-active', t==='home'); 
         document.getElementById('navInvest').classList.toggle('nav-active', t==='investments'); 
+        document.getElementById('navBox').classList.toggle('nav-active', t==='luckybox'); 
       } 
     </script>
 </body>
