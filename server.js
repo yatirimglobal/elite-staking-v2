@@ -257,7 +257,7 @@ app.post('/api/admin/all', async (req, res) => {
     }
 });
 
-// ➕ YENİ ROTALAR: Admin Panelinde Bakiye Yükleme Taleplerini Listeleme
+// Admin Panelinde Bakiye Yükleme Taleplerini Listeleme
 app.post('/api/admin/deposits', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
@@ -268,7 +268,38 @@ app.post('/api/admin/deposits', async (req, res) => {
     }
 });
 
-// ➕ YENİ ROTALAR: Admin Panelinden Bakiye Yüklemeyi Onaylama
+// ⚡ YENİ EKLENEN ROTA: Admin Panelinde Tüm Para Çekme Taleplerini Listeleme
+app.post('/api/admin/withdrawals', async (req, res) => {
+    try {
+        if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
+        
+        const users = await User.find();
+        let allWithdrawals = [];
+
+        users.forEach(user => {
+            if (user.withdrawals && user.withdrawals.length > 0) {
+                user.withdrawals.forEach(w => {
+                    allWithdrawals.push({
+                        _id: w._id,
+                        telegramId: user.telegramId,
+                        name: user.name || "Bilinmiyor",
+                        amount: w.amount,
+                        wallet: w.wallet,
+                        status: w.status,
+                        date: w.date
+                    });
+                });
+            }
+        });
+
+        allWithdrawals.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return res.json(allWithdrawals);
+    } catch (e) {
+        return res.status(500).json({ error: e.message });
+    }
+});
+
+// Admin Panelinden Bakiye Yüklemeyi Onaylama
 app.post('/api/admin/deposit/approve', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
@@ -294,7 +325,7 @@ app.post('/api/admin/deposit/approve', async (req, res) => {
     }
 });
 
-// ➕ YENİ ROTALAR: Admin Panelinden Bakiye Yüklemeyi Reddetme
+// Admin Panelinden Bakiye Yüklemeyi Reddetme
 app.post('/api/admin/deposit/reject', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
