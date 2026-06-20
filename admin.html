@@ -15,7 +15,6 @@
 </head>
 <body class="p-6 md:p-12">
 
-    <!-- GİRİŞ EKRANI (GATE) -->
     <div id="loginGate" class="fixed inset-0 bg-[#0b0f12] z-[999] flex items-center justify-center p-6">
         <div class="admin-card w-full max-w-md p-8 rounded-2xl shadow-2xl border border-yellow-500/10 text-center">
             <span class="text-4xl mb-4 block">🔐</span>
@@ -30,10 +29,8 @@
         </div>
     </div>
 
-    <!-- PANEL ANA İÇERİK -->
     <div id="adminContent" class="max-w-7xl mx-auto hidden">
         
-        <!-- ÜST BAŞLIK ALANI -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-white/10 gap-4">
             <div>
                 <h1 class="text-2xl font-black text-yellow-500 font-orbitron tracking-wider uppercase italic">EliteStaking Yönetim Paneli</h1>
@@ -49,7 +46,6 @@
             </div>
         </div>
 
-        <!-- ÖZET İSTATİSTİK KARTLARI -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="admin-card rounded-2xl p-6 border-l-4 border-yellow-500 shadow-xl">
                 <div class="flex justify-between items-center mb-2">
@@ -84,7 +80,6 @@
             </div>
         </div>
 
-        <!-- 🚀 SEKMELER (TAB MENU) -->
         <div class="flex flex-wrap gap-2 mb-8 bg-white/5 p-2 rounded-2xl border border-white/5">
             <button onclick="switchTab('depositTab')" id="btn-depositTab" class="tab-btn active flex-1 min-w-[140px] text-gray-400 hover:text-white py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all font-bold">
                 💳 Bakiye Yüklemeleri
@@ -103,9 +98,6 @@
             </button>
         </div>
 
-        <!-- 📌 SEKME İÇERİKLERİ (TAB CONTENTS) -->
-
-        <!-- 1. Bakiye Yükleme Sekmesi -->
         <div id="depositTab" class="tab-content admin-card rounded-2xl p-6 shadow-xl border border-blue-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">💳</span>
@@ -127,7 +119,6 @@
             </div>
         </div>
 
-        <!-- 2. Para Çekme Sekmesi -->
         <div id="withdrawTab" class="tab-content hidden admin-card rounded-2xl p-6 shadow-xl border border-red-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">🚨</span>
@@ -149,7 +140,6 @@
             </div>
         </div>
 
-        <!-- 3. Yatırım Onayları Sekmesi -->
         <div id="investTab" class="tab-content hidden admin-card rounded-2xl p-6 shadow-xl border border-yellow-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">💰</span>
@@ -171,7 +161,6 @@
             </div>
         </div>
 
-        <!-- 4. İptal ve İade Talepleri Sekmesi -->
         <div id="cancelTab" class="tab-content hidden admin-card rounded-2xl p-6 shadow-xl border border-orange-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">⚠️</span>
@@ -193,7 +182,6 @@
             </div>
         </div>
 
-        <!-- 5. Şanslı Kutu Oyun Geçmişi Sekmesi -->
         <div id="luckyTab" class="tab-content hidden admin-card rounded-2xl p-6 shadow-xl border border-purple-500/10">
             <div class="flex items-center gap-3 mb-6">
                 <span class="text-xl">🎁</span>
@@ -301,7 +289,6 @@
 
         // 📊 TABLOLARI VE İSTATİSTİKLERİ EKLEME
         function renderTablesAndStats(users, deposits) {
-            // HATA AYIKLAMA (Console Log)
             console.log("=== ADMİNE GELEN KULLANICI VERİLERİ ===", users);
 
             let cancelList = [];
@@ -372,7 +359,8 @@
                         const witAmount = Number(wit.amount) || 0;
                         const currentStatus = String(wit.status).trim().toLowerCase();
                         
-                        if (currentStatus === 'beklemede' || currentStatus === 'pending' || wit.status === 'Beklemede') {
+                        // Backend tarafında küçük-büyük harf veya ingilizce yazılma ihtimaline karşı tam uyum sağlandı
+                        if (currentStatus === 'beklemede' || currentStatus === 'pending' || currentStatus === 'onay bekliyor') {
                             totalWithdrawSum += witAmount;
                             withdrawList.push({
                                 telegramId: user.telegramId,
@@ -564,25 +552,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, withdrawId })
                 });
-                if(res.ok) { alert("Çekim talebi tamamlandı!"); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
-            } catch(e) { alert("Bağlantı hatası."); }
+                if(res.ok) { 
+                    alert("Para çekme talebi başarıyla onaylandı!"); 
+                    loadAdminData(); 
+                } else { 
+                    alert("İşlem başarısız oldu."); 
+                }
+            } catch(e) { 
+                alert("Bağlantı hatası."); 
+            }
         }
-
-        async function deleteInvestment(telegramId, investId) {
-            if(!confirm("Kalıcı olarak silmek istiyor musunuz?")) return;
-            try {
-                const res = await fetch(`${API_URL}/admin/delete-invest`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
-                });
-                if(res.ok) { alert("Kayıt silindi."); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
-            } catch(e) { alert("Bağlantı hatası."); }
-        }
-
-        document.getElementById("gatePassword").addEventListener("keyup", function(event) {
-            if (event.key === "Enter") { checkAdminLogin(); }
-        });
     </script>
 </body>
 </html>
