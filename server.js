@@ -268,7 +268,7 @@ app.post('/api/admin/deposits', async (req, res) => {
     }
 });
 
-// ⚡ YENİ EKLENEN ROTA: Admin Panelinde Tüm Para Çekme Taleplerini Listeleme
+// Admin Panelinde Tüm Para Çekme Taleplerini Listeleme
 app.post('/api/admin/withdrawals', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
@@ -412,7 +412,7 @@ app.post('/api/admin/approve-withdraw', async (req, res) => {
     }
 });
 
-// Yatırım Silme/Reddetme
+// 🛠 DÜZELTİLEN ROTA: Yatırım Silme/Reddetme endpoint adresi admin.html ile senkronize edildi
 app.post('/api/admin/delete-invest', async (req, res) => {
     try {
         if (req.body.password !== ADMIN_PASSWORD) return res.status(401).json({ error: "Yetkisiz" });
