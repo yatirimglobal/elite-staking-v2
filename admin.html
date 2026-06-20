@@ -97,8 +97,7 @@
                             <th class="pb-3">Tarih</th>
                         </tr>
                     </thead>
-                    <tbody id="luckyBoxRequestsTable" class="divide-y divide-white/5 font-medium">
-                        </tbody>
+                    <tbody id="luckyBoxRequestsTable" class="divide-y divide-white/5 font-medium"></tbody>
                 </table>
             </div>
         </div>
@@ -119,8 +118,7 @@
                             <th class="pb-3 text-right">Aksiyon</th>
                         </tr>
                     </thead>
-                    <tbody id="cancelRequestsTable" class="divide-y divide-white/5 font-medium">
-                        </tbody>
+                    <tbody id="cancelRequestsTable" class="divide-y divide-white/5 font-medium"></tbody>
                 </table>
             </div>
         </div>
@@ -141,8 +139,7 @@
                             <th class="pb-3 text-right">Aksiyon</th>
                         </tr>
                     </thead>
-                    <tbody id="withdrawRequestsTable" class="divide-y divide-white/5 font-medium">
-                        </tbody>
+                    <tbody id="withdrawRequestsTable" class="divide-y divide-white/5 font-medium"></tbody>
                 </table>
             </div>
         </div>
@@ -163,8 +160,7 @@
                             <th class="pb-3 text-right">Aksiyonlar</th>
                         </tr>
                     </thead>
-                    <tbody id="pendingInvestmentsTable" class="divide-y divide-white/5 font-medium">
-                        </tbody>
+                    <tbody id="pendingInvestmentsTable" class="divide-y divide-white/5 font-medium"></tbody>
                 </table>
             </div>
         </div>
@@ -246,11 +242,9 @@
             let totalWithdrawSum = 0;
             let totalLuckyBoxWinSum = 0;
 
-            // Tüm kullanıcıların şanslı kutu geçmişlerini tek bir çatı altında toplamak için dizi
             let allLuckyBoxLogs = [];
 
             users.forEach(user => {
-                // Şanslı kutu verilerini toplama alanı
                 if (user.luckyBoxHistory && user.luckyBoxHistory.length > 0) {
                     user.luckyBoxHistory.forEach(log => {
                         totalLuckyBoxWinSum += (Number(log.wonAmount) || 0);
@@ -279,7 +273,7 @@
                             cancelHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-orange-400 font-orbitron">$${amount}</td>
+                                <td class="py-4 text-orange-400 font-orbitron">$${amount.toFixed(2)}</td>
                                 <td class="py-4">${inv.planDays} Gün</td>
                                 <td class="py-4 font-mono text-xs text-yellow-500 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${cüzdanAdresi}</td>
                                 <td class="py-4 text-right">
@@ -292,7 +286,7 @@
                             pendingInvestHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-green-400 font-orbitron">$${amount}</td>
+                                <td class="py-4 text-green-400 font-orbitron">$${amount.toFixed(2)}</td>
                                 <td class="py-4">${inv.planDays} Gün</td>
                                 <td class="py-4 text-xs text-gray-500">${new Date(inv.createdAt).toLocaleString('tr-TR')}</td>
                                 <td class="py-4 text-right space-x-2">
@@ -314,7 +308,7 @@
                             withdrawHTML += `
                             <tr class="text-gray-300">
                                 <td class="py-4 font-mono text-xs">${user.telegramId} (${user.name || 'Bilinmiyor'})</td>
-                                <td class="py-4 text-red-400 font-orbitron">$${witAmount}</td>
+                                <td class="py-4 text-red-400 font-orbitron">$${witAmount.toFixed(2)}</td>
                                 <td class="py-4 text-xs text-gray-500">${new Date(wit.date).toLocaleString('tr-TR')}</td>
                                 <td class="py-4 font-mono text-xs text-green-400 select-all uppercase bg-black/30 p-1.5 rounded border border-white/5 break-all">${wit.wallet}</td>
                                 <td class="py-4 text-right">
@@ -326,7 +320,6 @@
                 }
             });
 
-            // Şanslı kutu geçmişini tarihe göre yeniden eskiye sıralayıp ilk 50 kaydı alma
             allLuckyBoxLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
             const limitedLogs = allLuckyBoxLogs.slice(0, 50);
 
@@ -345,13 +338,11 @@
                 </tr>`;
             });
 
-            // Üst İstatistik kartlarının basılması
             document.getElementById('statTotalInvest').innerText = `$${totalInvestSum.toFixed(2)}`;
             document.getElementById('statTotalProfit').innerText = `$${totalProfitSum.toFixed(2)}`;
             document.getElementById('statTotalWithdraw').innerText = `$${totalWithdrawSum.toFixed(2)}`;
             document.getElementById('statTotalLuckyBoxWin').innerText = `$${totalLuckyBoxWinSum.toFixed(2)}`;
 
-            // Tabloların render edilmesi
             document.getElementById('luckyBoxRequestsTable').innerHTML = luckyBoxHTML || `<tr><td colspan="4" class="py-6 text-center text-xs text-gray-600 italic uppercase">Henüz Kutu Açma İşlemi Yok</td></tr>`;
             document.getElementById('cancelRequestsTable').innerHTML = cancelHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif İptal Talebi Yok</td></tr>`;
             document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
@@ -366,45 +357,52 @@
             document.getElementById('loginGate').classList.remove('hidden');
         }
 
-        // --- AKSİYON FONKSİYONLARI ---
         async function approveInvestment(telegramId, investId) {
             if(!confirm("Bu yatırımı onaylayıp aktifleştirmek istiyor musunuz?")) return;
-            const res = await fetch(`${API_URL}/admin/approve`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
-            });
-            if(res.ok) { alert("Yatırım aktif edildi."); loadAdminData(); }
+            try {
+                const res = await fetch(`${API_URL}/admin/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
+                });
+                if(res.ok) { alert("Yatırım aktif edildi."); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         async function approveCancel(telegramId, investId) {
             if(!confirm("İadeyi cüzdana gönderdiyseniz onaylayın.")) return;
-            const res = await fetch(`${API_URL}/admin/approve-cancel`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
-            });
-            if(res.ok) { alert("İptal talebi onaylandı!"); loadAdminData(); }
+            try {
+                const res = await fetch(`${API_URL}/admin/approve-cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
+                });
+                if(res.ok) { alert("İptal talebi onaylandı!"); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         async function approveWithdraw(telegramId, withdrawId) {
             if(!confirm("Ödemeyi transfer ettiyseniz onaylayın.")) return;
-            const res = await fetch(`${API_URL}/admin/approve-withdraw`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, withdrawId })
-            });
-            if(res.ok) { alert("Çekim talebi tamamlandı!"); loadAdminData(); }
+            try {
+                const res = await fetch(`${API_URL}/admin/approve-withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, withdrawId })
+                });
+                if(res.ok) { alert("Çekim talebi tamamlandı!"); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         async function deleteInvestment(telegramId, investId) {
             if(!confirm("Kalıcı olarak silmek istiyor musunuz?")) return;
-            const res = await fetch(`${API_URL}/admin/delete-invest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
-            });
-            if(res.ok) { alert("Kayıt silindi."); loadAdminData(); }
+            try {
+                const res = await fetch(`${API_URL}/admin/delete-invest`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: ADMIN_PASSWORD, telegramId, investId })
+                });
+                if(res.ok) { alert("Kayıt silindi."); loadAdminData(); } else { alert("İşlem başarısız oldu."); }
+            } catch(e) { alert("Bağlantı hatası."); }
         }
 
         document.getElementById("gatePassword").addEventListener("keyup", function(event) {
