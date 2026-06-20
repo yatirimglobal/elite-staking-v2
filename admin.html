@@ -261,12 +261,9 @@
 
         // 🔀 SEKME DEĞİŞTİRME FONKSİYONU
         function switchTab(tabId) {
-            // Tüm sekmeleri gizle
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            // Tüm butonların aktiflik class'ını temizle
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Seçilen sekmeyi göster, butonunu aktif et
             document.getElementById(tabId).classList.remove('hidden');
             document.getElementById('btn-' + tabId).classList.add('active');
         }
@@ -302,20 +299,24 @@
             }
         }
 
+        // 📊 TABLOLARI VE İSTATİSTİKLERİ EKLEME
         function renderTablesAndStats(users, deposits) {
+            // HATA AYIKLAMA (Console Log)
+            console.log("=== ADMİNE GELEN KULLANICI VERİLERİ ===", users);
+
             let cancelList = [];
             let withdrawList = [];
             let pendingInvestList = [];
             let allLuckyBoxLogs = [];
-            let depositList = [...deposits]; // Array kopyalama
+            let depositList = [...deposits]; 
 
             let totalInvestSum = 0;
             let totalProfitSum = 0; 
             let totalWithdrawSum = 0;
             let totalLuckyBoxWinSum = 0;
 
-            // 1. Kullanıcı Verilerini İşle ve Alt Listeleri Hazırla
             users.forEach(user => {
+                // Şanslı Kutu Geçmişi
                 if (user.luckyBoxHistory && user.luckyBoxHistory.length > 0) {
                     user.luckyBoxHistory.forEach(log => {
                         totalLuckyBoxWinSum += (Number(log.wonAmount) || 0);
@@ -329,6 +330,7 @@
                     });
                 }
 
+                // Yatırım Yönetimleri
                 if (user.investments && user.investments.length > 0) {
                     user.investments.forEach(inv => {
                         const amount = Number(inv.amount) || 0;
@@ -364,17 +366,20 @@
                     });
                 }
 
+                // 🚨 PARA ÇEKME TALEPLERİ ESNEK FİLTRELEME
                 if (user.withdrawals && user.withdrawals.length > 0) {
                     user.withdrawals.forEach(wit => {
                         const witAmount = Number(wit.amount) || 0;
-                        if (wit.status === 'Beklemede') {
+                        const currentStatus = String(wit.status).trim().toLowerCase();
+                        
+                        if (currentStatus === 'beklemede' || currentStatus === 'pending' || wit.status === 'Beklemede') {
                             totalWithdrawSum += witAmount;
                             withdrawList.push({
                                 telegramId: user.telegramId,
                                 name: user.name || 'Bilinmiyor',
                                 amount: witAmount,
-                                date: wit.date,
-                                wallet: wit.wallet,
+                                date: wit.date || wit.createdAt || new Date(),
+                                wallet: wit.wallet || "Cüzdan Belirtilmemiş",
                                 witId: wit._id
                             });
                         }
@@ -382,16 +387,14 @@
                 }
             });
 
-            // ⏳ YENİDEN ESKİYE SIRALAMA MOTORU (Sort by Date Descending)
+            // ⏳ YENİDEN ESKİYE SIRALAMA MOTORU
             depositList.sort((a, b) => new Date(b.date) - new Date(a.date));
             withdrawList.sort((a, b) => new Date(b.date) - new Date(a.date));
             pendingInvestList.sort((a, b) => new Date(b.date) - new Date(a.date));
             cancelList.sort((a, b) => new Date(b.date) - new Date(a.date));
             allLuckyBoxLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // HTML ÇIKTILARINI OLUŞTURMA
-
-            // -- Bakiye Yüklemeleri Tablosu --
+            // -- Bakiye Yüklemeleri Tablosu HTML --
             let depositHTML = '';
             depositList.forEach(dep => {
                 let statusBadge = '';
@@ -419,7 +422,7 @@
                 </tr>`;
             });
 
-            // -- Para Çekme Tablosu --
+            // -- Para Çekme Tablosu HTML --
             let withdrawHTML = '';
             withdrawList.forEach(wit => {
                 withdrawHTML += `
@@ -434,7 +437,7 @@
                 </tr>`;
             });
 
-            // -- Yatırım Onayları Tablosu --
+            // -- Yatırım Onayları Tablosu HTML --
             let pendingInvestHTML = '';
             pendingInvestList.forEach(inv => {
                 pendingInvestHTML += `
@@ -450,7 +453,7 @@
                 </tr>`;
             });
 
-            // -- İade ve İptal Tablosu --
+            // -- İptal ve İade Tablosu HTML --
             let cancelHTML = '';
             cancelList.forEach(inv => {
                 cancelHTML += `
@@ -465,9 +468,9 @@
                 </tr>`;
             });
 
-            // -- Şanslı Kutu Tablosu --
+            // -- Şanslı Kutu Tablosu HTML --
             let luckyBoxHTML = '';
-            const limitedLogs = allLuckyBoxLogs.slice(0, 50); // Son 50 adet limit
+            const limitedLogs = allLuckyBoxLogs.slice(0, 50); 
             limitedLogs.forEach(log => {
                 let typeColor = "text-gray-400";
                 if(log.resultType === 'WIN') typeColor = "text-green-400 font-bold";
@@ -489,7 +492,7 @@
             document.getElementById('statTotalWithdraw').innerText = `$${totalWithdrawSum.toFixed(2)}`;
             document.getElementById('statTotalLuckyBoxWin').innerText = `$${totalLuckyBoxWinSum.toFixed(2)}`;
 
-            // TABLOLARI YAZDIR (Boş veri koruması ile)
+            // TABLOLARI SEKMELERE BAS
             document.getElementById('depositRequestsTable').innerHTML = depositHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Bakiye Yükleme Talebi Bulunmuyor</td></tr>`;
             document.getElementById('withdrawRequestsTable').innerHTML = withdrawHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Aktif Çekim Talebi Yok</td></tr>`;
             document.getElementById('pendingInvestmentsTable').innerHTML = pendingInvestHTML || `<tr><td colspan="5" class="py-6 text-center text-xs text-gray-600 italic uppercase">Onay Bekleyen Yatırım Yok</td></tr>`;
